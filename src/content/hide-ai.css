@@ -1,0 +1,69 @@
+/* ==========================================================================
+   Old Google (2020) — AI removal layer
+   Injected at document_start so the AI Overview never paints, not even a flash.
+   Everything is gated on html.og-hide-ai.
+
+   Google renames its obfuscated classes constantly. The selectors below are the
+   durable-ish hooks (data-* attributes, aria labels, udm=50 links); the fragile
+   class hooks are grouped separately, and 10-purge.js does a text/heading based
+   sweep for whatever these miss. You can add your own in the popup.
+   ========================================================================== */
+
+/* --- structural hooks: AI Overview block ------------------------------- */
+html.og-hide-ai [data-subtree="aio"],
+html.og-hide-ai [data-attrid="SGEAnswer"],
+html.og-hide-ai [data-attrid*="SGE"],
+html.og-hide-ai [data-al-page-type="aio"],
+html.og-hide-ai [aria-label="AI Overview"],
+html.og-hide-ai [aria-label="AI overview"],
+html.og-hide-ai [aria-label="AI Overviews"],
+html.og-hide-ai [aria-label*="AI-powered overview"],
+html.og-hide-ai #eKIzJc,
+html.og-hide-ai #m-x-content,
+html.og-hide-ai #ost-mtc,
+/* --- AI Mode: tab, chip, search-box entry point ------------------------ */
+html.og-hide-ai a[href*="udm=50"],
+html.og-hide-ai a[aria-label*="AI Mode"],
+html.og-hide-ai button[aria-label*="AI Mode"],
+html.og-hide-ai [role="button"][aria-label*="AI Mode"],
+html.og-hide-ai [role="listitem"][aria-label*="AI Mode"],
+html.og-hide-ai a[aria-label*="Ask AI"],
+html.og-hide-ai button[aria-label*="Ask AI"],
+html.og-hide-ai [role="button"][aria-label*="Ask AI"],
+html.og-hide-ai [data-udm="50"],
+/* --- Search Labs / Gemini promos --------------------------------------- */
+html.og-hide-ai a[aria-label*="Search Labs"],
+html.og-hide-ai button[aria-label*="Search Labs"],
+html.og-hide-ai [data-attrid*="labs_"],
+html.og-hide-ai a[href*="labs.google"],
+html.og-hide-ai a[href*="gemini.google.com"] {
+  display: none !important;
+}
+
+/* --- fragile class hooks ------------------------------------------------
+   These are obfuscated names Google recycles, so they are scoped to inside the
+   results column: even if one of them lands on a header or navigation element
+   tomorrow, it can no longer take the search box down with it. Nothing outside
+   #rcnt is ever hidden by a class-name guess. */
+html.og-hide-ai #rcnt .M8OgIe,
+html.og-hide-ai #rcnt .LT6XE,
+html.og-hide-ai #rcnt .YNk70c,
+html.og-hide-ai #rcnt .h1ccpe,
+html.og-hide-ai #rcnt .bz1Vpc,
+html.og-hide-ai #rcnt .hdzaWe,
+html.og-hide-ai #rcnt .WaaZC:has([data-subtree="aio"]) {
+  display: none !important;
+}
+
+/* Anything 10-purge.js decides is AI. */
+html.og-hide-ai [data-og-hidden="ai"] {
+  display: none !important;
+}
+
+/* Collapse the reserved space Google leaves while the overview streams in. */
+html.og-hide-ai #rcnt [style*="min-height"][data-hveid]:empty,
+html.og-hide-ai #center_col > div:empty {
+  min-height: 0 !important;
+  height: 0 !important;
+  margin: 0 !important;
+}

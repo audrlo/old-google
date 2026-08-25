@@ -1,0 +1,124 @@
+* { box-sizing: border-box; }
+
+body {
+  width: 340px;
+  margin: 0;
+  padding: 0 0 8px 0;
+  font-family: arial, sans-serif;
+  font-size: 13px;
+  color: #202124;
+  background: #fff;
+}
+
+.head {
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid #ebebeb;
+}
+.wordmark {
+  font-size: 26px;
+  letter-spacing: -1px;
+  line-height: 1;
+}
+.sub {
+  font-size: 11px;
+  color: #70757a;
+  padding-top: 4px;
+}
+
+main { padding: 4px 16px 0; }
+
+h2 {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  color: #70757a;
+  margin: 12px 0 6px;
+  font-weight: bold;
+}
+
+hr {
+  border: 0;
+  border-top: 1px solid #ebebeb;
+  margin: 12px 0 0;
+}
+
+.row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 9px 0;
+  cursor: pointer;
+}
+.row input { margin: 2px 0 0; flex: none; accent-color: #1a73e8; }
+.row b { display: block; font-weight: normal; color: #202124; }
+.row em {
+  display: block;
+  font-style: normal;
+  font-size: 11px;
+  line-height: 1.45;
+  color: #70757a;
+  padding-top: 2px;
+}
+.sub-row { padding-left: 22px; }
+.row:hover b { color: #1a0dab; }
+
+.field {
+  display: block;
+  padding: 8px 0;
+}
+.field > span { display: block; color: #202124; }
+.field em {
+  display: block;
+  font-style: normal;
+  font-size: 11px;
+  line-height: 1.45;
+  color: #70757a;
+  padding: 2px 0 5px;
+}
+textarea {
+  width: 100%;
+  font-family: monospace;
+  font-size: 11px;
+  line-height: 1.5;
+  padding: 6px 8px;
+  border: 1px solid #dfe1e5;
+  border-radius: 4px;
+  resize: vertical;
+  color: #202124;
+}
+textarea:focus {
+  outline: none;
+  border-color: #1a73e8;
+}
+
+details { padding: 8px 0 4px; }
+summary {
+  cursor: pointer;
+  font-size: 12px;
+  color: #1a0dab;
+  padding: 6px 0;
+  list-style: none;
+}
+summary::-webkit-details-marker { display: none; }
+summary::before { content: "▸ "; color: #70757a; }
+details[open] summary::before { content: "▾ "; }
+
+.reset {
+  font-family: arial, sans-serif;
+  font-size: 12px;
+  color: #5f6368;
+  background: #f8f9fa;
+  border: 1px solid #dadce0;
+  border-radius: 4px;
+  padding: 6px 12px;
+  cursor: pointer;
+  margin: 6px 0 2px;
+}
+.reset:hover { background: #f1f3f4; border-color: #c6c9cc; }
+
+footer {
+  padding: 6px 16px 0;
+  min-height: 18px;
+  font-size: 11px;
+  color: #34a853;
+}

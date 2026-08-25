@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Old Google — demo SERP</title>
+<link rel="stylesheet" href="../src/content/hide-ai.css">
+<link rel="stylesheet" href="../src/content/theme-2020.css">
+<link rel="stylesheet" href="../src/content/snippet.css">
+<style>
+  body { margin:0; }
+  .demo-bar { position:fixed; right:12px; bottom:12px; z-index:99; background:#202124; color:#fff;
+    font:12px/1.5 arial,sans-serif; padding:10px 14px; border-radius:6px; max-width:340px; }
+  .demo-bar b { color:#8ab4f8; }
+  .demo-bar code { color:#fdd663; }
+  /* minimal stand-in for Google's own header chrome */
+  .hdr { padding:20px 0 0 180px; }
+  .hdr .lg { display:inline-block; font-size:26px; letter-spacing:-1px; vertical-align:middle; margin-right:34px; }
+  .hdr .RNNXgb { display:inline-flex; align-items:center; width:560px; padding:0 16px; vertical-align:middle; }
+  .hdr input { border:0; width:100%; height:42px; }
+  #hdtb-msb { margin-left:180px !important; padding-left:0 !important; }
+</style>
+</head>
+<body>
+<div id="gsr">
+  <div class="hdr">
+    <span class="lg"><span style="color:#4285f4">G</span><span style="color:#ea4335">o</span><span style="color:#fbbc05">o</span><span style="color:#4285f4">g</span><span style="color:#34a853">l</span><span style="color:#ea4335">e</span></span>
+    <span class="RNNXgb"><input name="q" value="what is a black hole"></span>
+  </div>
+  <div id="hdtb-msb" role="navigation">
+    <div class="hdtb-mitem hdtb-msel"><a href="#" aria-current="page">All</a></div>
+    <div class="hdtb-mitem"><a href="#">Images</a></div>
+    <div class="hdtb-mitem"><a href="#">Videos</a></div>
+    <div class="hdtb-mitem"><a href="#">News</a></div>
+    <div class="hdtb-mitem"><a href="#">Books</a></div>
+    <div class="hdtb-mitem"><a href="/search?udm=50">AI Mode</a></div>
+  </div>
+
+  <div id="cnt"><div id="rcnt">
+    <div id="center_col">
+      <div id="result-stats">About 47,300,000 results (0.38 seconds)</div>
+      <div id="search"><div id="rso">
+
+        <!-- what the extension is supposed to delete -->
+        <div data-hveid="aio1" class="MjjYud">
+          <div data-subtree="aio">
+            <h2 role="heading">AI Overview</h2>
+            <div>A black hole is a region of spacetime where gravity is so strong that nothing can escape it. They form when massive stars collapse…</div>
+          </div>
+        </div>
+
+        <div class="MjjYud" data-hveid="r1">
+          <div class="yuRUbf">
+            <a href="https://en.wikipedia.org/wiki/Black_hole">
+              <div><img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" width="16" height="16" alt=""><cite>en.wikipedia.org › wiki › Black_hole</cite></div>
+              <h3>Black hole - Wikipedia</h3>
+            </a>
+          </div>
+          <div class="VwiC3b">A <em>black hole</em> is a region of spacetime where gravity is so strong that nothing, including light and other electromagnetic waves, is capable of…</div>
+        </div>
+
+        <div class="MjjYud" data-hveid="r2">
+          <div class="yuRUbf">
+            <a href="https://science.nasa.gov/universe/black-holes/">
+              <div><img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" width="16" height="16" alt=""><cite>science.nasa.gov › universe › black-holes</cite></div>
+              <h3>Black Holes - NASA Science</h3>
+            </a>
+          </div>
+          <div class="VwiC3b"><span class="YrbPuc">Mar 14, 2026 — </span>A <em>black hole</em> is an astronomical object with a gravitational pull so strong that nothing, not even light, can escape it.</div>
+        </div>
+
+        <div class="MjjYud" data-hveid="r3">
+          <div class="yuRUbf">
+            <a href="https://www.esa.int/Science_Exploration/Space_Science/Black_holes">
+              <div><img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" width="16" height="16" alt=""><cite>esa.int › Science_Exploration › Space_Science</cite></div>
+              <h3>Black holes / Space Science / ESA</h3>
+            </a>
+          </div>
+          <div class="VwiC3b">Black holes are among the most extreme objects in the Universe. Their gravity is so intense that not even light can escape from within the event horizon.</div>
+        </div>
+
+      </div></div>
+      <div id="botstuff"></div>
+    </div>
+    <div id="rhs"><div><b>Black hole</b><br>Astronomical object</div></div>
+  </div></div>
+</div>
+
+<div class="demo-bar" id="demoBar">running harness…</div>
+
+<script>
+/* ---- stub the extension environment ------------------------------------ */
+const SAMPLE_ARTICLE = `
+<html><head><title>Black hole - Wikipedia</title>
+<meta property="og:title" content="Black hole - Wikipedia"></head>
+<body>
+<div id="mw-content-text"><div class="mw-parser-output">
+<div class="shortdescription">Object that has a no-escape zone</div>
+<p class="mw-empty-elt"></p>
+<p>A <b>black hole</b> is a region of spacetime where gravity is so strong that nothing, including light and other electromagnetic waves, has enough energy to escape it.<sup>[1]</sup> Einstein's theory of general relativity predicts that a sufficiently compact mass can deform spacetime to form a black hole.</p>
+<h2>Formation</h2>
+<p>Black holes of stellar mass form when very massive stars collapse at the end of their life cycle. After a black hole has formed, it can continue to grow by absorbing mass from its surroundings.</p>
+<h2>How black holes form</h2>
+<ol>
+<li>A massive star exhausts the hydrogen fuel in its core.</li>
+<li>Radiation pressure drops and the core collapses under its own gravity.</li>
+<li>The outer layers rebound outward as a supernova explosion.</li>
+<li>The remaining core is compressed past the point of neutron degeneracy.</li>
+<li>An event horizon forms, and light can no longer escape the region.</li>
+</ol>
+<footer>Privacy policy · All rights reserved</footer>
+</div></div>
+</body></html>`;
+
+window.chrome = {
+  storage: {
+    sync: { get: async (d) => ({}), set: async () => {} },
+    local: { get: async (d) => ({}), set: async () => {} },
+    onChanged: { addListener() {} },
+  },
+  runtime: {
+    lastError: null,
+    sendMessage(msg, cb) { setTimeout(() => cb({ ok: true, html: SAMPLE_ARTICLE, finalUrl: 'https://en.wikipedia.org/wiki/Black_hole' }), 120); },
+  },
+};
+</script>
+<script src="../src/content/00-state.js"></script>
+<script src="../src/content/10-purge.js"></script>
+<script src="../src/content/20-extract.js"></script>
+<script src="../src/content/30-snippet.js"></script>
+<script src="../src/content/40-theme.js"></script>
+<script>
+/* ---- drive the modules by hand (50-main.js is skipped on purpose) ------- */
+const OG = window.OG;
+const QUERY = 'what is a black hole';
+OG.settings.debug = true;
+OG.isSearchPage = () => true;
+OG.isResultsPage = () => true;
+OG.query = () => QUERY;
+OG.startIndex = () => 20;               // page 3, so the pager shows a window
+OG.applyClasses();
+
+const notes = [];
+OG.purgeAI();
+notes.push('purge: hid ' + document.querySelectorAll('[data-og-hidden]').length + ' node(s)');
+
+OG.theme();
+notes.push('marked ' + document.querySelectorAll('.og-result').length + ' results');
+
+OG.buildPagination();
+notes.push('pager: ' + (document.getElementById('og-pager-wrap') ? 'built' : 'MISSING'));
+
+// end-to-end: extraction against the stubbed fetch
+const answer = OG.extractAnswer(SAMPLE_ARTICLE, QUERY, 'https://en.wikipedia.org/wiki/Black_hole');
+notes.push('extract: ' + (answer ? answer.kind + ' (conf ' + answer.confidence.toFixed(2) + ')' : 'NOTHING'));
+if (answer) {
+  answer.origin = 'extracted';
+  answer.host = 'en.wikipedia.org';
+  OG.mountSnippet(OG.renderSnippet(answer));
+}
+
+// and the list-shaped variant, for the how-to case
+const listAnswer = OG.extractAnswer(SAMPLE_ARTICLE, 'how do black holes form', 'https://en.wikipedia.org/wiki/Black_hole');
+notes.push('list case: ' + (listAnswer ? listAnswer.kind : 'NOTHING'));
+
+document.getElementById('demoBar').innerHTML =
+  '<b>harness</b><br>' + notes.map((n) => '<code>' + n + '</code>').join('<br>');
+console.log('paragraph answer', answer);
+console.log('list answer', listAnswer);
+</script>
+</body>
+</html>

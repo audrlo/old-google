@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Old Google (2020)</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header class="head">
+      <div class="wordmark">
+        <span style="color:#4285f4">G</span><span style="color:#ea4335">o</span><span style="color:#fbbc05">o</span><span style="color:#4285f4">g</span><span style="color:#34a853">l</span><span style="color:#ea4335">e</span>
+      </div>
+      <div class="sub">2020 edition &middot; 2026 results</div>
+    </header>
+
+    <main>
+      <section>
+        <label class="row">
+          <input type="checkbox" id="hideAI" />
+          <span>
+            <b>Remove AI Overview &amp; AI Mode</b>
+            <em>Hides the generated summary, the AI Mode tab, and Labs promos.</em>
+          </span>
+        </label>
+
+        <label class="row">
+          <input type="checkbox" id="theme" />
+          <span>
+            <b>2020 look</b>
+            <em>Arial, blue 20px titles, 652px column, classic tab strip.</em>
+          </span>
+        </label>
+
+        <label class="row sub-row">
+          <input type="checkbox" id="followDark" />
+          <span><b>Follow dark mode</b><em>Match Google's theme. Off forces the light 2020 palette, which looks odd against a dark header.</em></span>
+        </label>
+
+        <label class="row sub-row">
+          <input type="checkbox" id="greenUrls" />
+          <span><b>Green URLs</b><em>Go further back &mdash; the pre-2016 green.</em></span>
+        </label>
+
+        <label class="row sub-row">
+          <input type="checkbox" id="hideFooter" />
+          <span><b>Hide the footer bar</b><em>Drops "Results are not personalized" and the location line.</em></span>
+        </label>
+
+        <label class="row sub-row">
+          <input type="checkbox" id="pagination" />
+          <span><b>Numbered pages</b><em>Restores the Gooooooogle pager instead of endless scroll.</em></span>
+        </label>
+      </section>
+
+      <hr />
+
+      <section>
+        <h2>Featured snippet</h2>
+        <label class="row radio">
+          <input type="radio" name="snippetMode" value="synthesize" />
+          <span><b>Build one from the top result</b><em>Quotes a passage from the #1 site's own page. One source, verbatim.</em></span>
+        </label>
+        <label class="row">
+          <input type="checkbox" id="dictionary" />
+          <span><b>Definition &amp; synonym panel</b><em>Brings back the built-in dictionary box for "define x", "x definition", "synonyms for x". Looks the word up at dictionaryapi.dev.</em></span>
+        </label>
+
+        <label class="row sub-row">
+          <input type="checkbox" id="rerank" />
+          <span><b>Rank passages with the built-in model</b><em>A 63&nbsp;MB question-answering model, bundled and run locally &mdash; nothing is sent anywhere. Finds the answer when it shares no words with your query.</em></span>
+        </label>
+
+        <label class="row sub-row">
+          <input type="checkbox" id="preferWikipedia" />
+          <span><b>Prefer Wikipedia as the source</b><em>When it's on the first page, quote it first.</em></span>
+        </label>
+        <label class="row radio">
+          <input type="radio" name="snippetMode" value="google" />
+          <span><b>Only Google's own</b><em>Restyles a snippet if Google served one. No extra requests.</em></span>
+        </label>
+        <label class="row radio">
+          <input type="radio" name="snippetMode" value="off" />
+          <span><b>None</b><em>Plain ten blue links.</em></span>
+        </label>
+
+      </section>
+
+      <hr />
+
+      <details>
+        <summary>Advanced</summary>
+        <label class="field">
+          <span>Extra selectors to hide<em>One per line. Use this when Google renames something and the AI box comes back.</em></span>
+          <textarea id="extraHideSelectors" rows="3" spellcheck="false" placeholder="div[data-subtree=&quot;aio&quot;]"></textarea>
+        </label>
+        <label class="field">
+          <span>Custom CSS</span>
+          <textarea id="customCss" rows="3" spellcheck="false" placeholder="#rso .og-title { font-size: 18px !important; }"></textarea>
+        </label>
+        <label class="row">
+          <input type="checkbox" id="debug" />
+          <span><b>Debug logging</b><em>Logs what it hid and where the snippet came from.</em></span>
+        </label>
+        <button id="reset" class="reset" type="button">Reset to defaults</button>
+      </details>
+    </main>
+
+    <footer><span id="status"></span></footer>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

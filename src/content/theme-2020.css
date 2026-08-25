@@ -1,0 +1,484 @@
+/* ==========================================================================
+   Old Google (2020) — the skin.
+
+   Everything is gated on html.og-2020. Where possible we target IDs Google has
+   kept for fifteen years (#rcnt, #center_col, #rso, #rhs, #botstuff) and the
+   og-* hooks 40-theme.js stamps on each result, rather than obfuscated classes.
+
+   Reference metrics, desktop google.com circa mid-2020:
+     content column   652px, offset 180px from the left edge
+     search box       692 x 44, 24px radius, 1px #dfe1e5
+     result title     20px arial #1a0dab (visited #681da8)
+     result URL       14px #202124, favicon 16px, breadcrumb with ›
+     result snippet   14px/1.58 #4d5156
+     tab strip        13px #5f6368, active #1a73e8 with 3px underline
+   ========================================================================== */
+
+/* --------------------------------------------------------------- palette --
+   Every colour in the skin comes from here so the whole thing can follow
+   Google's theme. 40-theme.js reads the colour of the search box — which the
+   extension never restyles — and sets .og-dark when Google is in dark mode.
+
+   Forcing white backgrounds while leaving Google's light-grey text alone is
+   what made "People also ask" disappear on a dark SERP.
+
+   The dark values are Google's own dark palette: #202124 ground, #e8eaed text,
+   #8ab4f8 links, #c58af9 visited, #bdc1c6 secondary, #3c4043 borders.
+   -------------------------------------------------------------------------- */
+
+html.og-2020 {
+  --og-bg: #fff;
+  --og-card-bg: #fff;
+  --og-text: #202124;
+  --og-link: #1a0dab;
+  --og-visited: #681da8;
+  --og-snippet: #4d5156;
+  --og-cite: #202124;
+  --og-cite-green: #006621;
+  --og-muted: #70757a;
+  --og-muted-strong: #5f6368;
+  --og-faint: #9aa0a6;
+  --og-border: #dfe1e5;
+  --og-border-soft: #e8eaed;
+  --og-rule: #ebebeb;
+  --og-rule-soft: #f1f3f4;
+  --og-footer-bg: #f2f2f2;
+  --og-footer-border: #e4e4e4;
+}
+
+html.og-2020.og-dark {
+  --og-bg: #202124;
+  --og-card-bg: #202124;
+  --og-text: #e8eaed;
+  --og-link: #8ab4f8;
+  --og-visited: #c58af9;
+  --og-snippet: #bdc1c6;
+  --og-cite: #bdc1c6;
+  --og-cite-green: #8bc34a;
+  --og-muted: #9aa0a6;
+  --og-muted-strong: #bdc1c6;
+  --og-faint: #80868b;
+  --og-border: #3c4043;
+  --og-border-soft: #3c4043;
+  --og-rule: #3c4043;
+  --og-rule-soft: #2a2b2d;
+  --og-footer-bg: #171717;
+  --og-footer-border: #3c4043;
+}
+
+/* ---------------------------------------------------------------- reset -- */
+
+html.og-2020,
+html.og-2020 body {
+  font-family: arial, sans-serif !important;
+  background: var(--og-bg) !important;
+  color: var(--og-text) !important;
+}
+
+html.og-2020 * {
+  scrollbar-color: auto;
+}
+
+/* Strip the 2024+ card chrome from every container in the results column. */
+html.og-2020 #rcnt,
+html.og-2020 #cnt,
+html.og-2020 #center_col,
+html.og-2020 #search,
+html.og-2020 #rso,
+html.og-2020 #botstuff,
+html.og-2020 #topstuff,
+html.og-2020 #rso > div:not(#og-featured):not(#og-dictionary),
+html.og-2020 .og-result,
+html.og-2020 .og-result > div {
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+}
+
+/* ------------------------------------------------------------- layout ---- */
+
+html.og-2020.og-web #cnt,
+html.og-2020.og-web #rcnt {
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: block !important;
+}
+
+/* Only the outermost container carries the 180px gutter — #cnt and #rcnt are
+   nested, so indenting both would offset the column twice. */
+html.og-2020.og-web #cnt.og-offset,
+html.og-2020.og-web #rcnt.og-offset {
+  padding-left: 180px !important;
+}
+html.og-2020.og-web #cnt.og-offset::after,
+html.og-2020.og-web #rcnt.og-offset::after {
+  content: '';
+  display: block;
+  clear: both;
+}
+
+/* A footer nested inside the gutter-carrying container has to escape it to run
+   edge to edge, the way the 2020 bar did. */
+html.og-2020.og-web #foot.og-foot-bleed,
+html.og-2020 #footcnt.og-foot-bleed,
+html.og-2020 footer.og-foot-bleed,
+html.og-2020 .fbar.og-foot-bleed {
+  margin-left: -180px !important;
+}
+
+html.og-2020.og-web #center_col {
+  width: 652px !important;
+  max-width: 652px !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  float: left !important;
+  border: 0 !important;
+}
+
+html.og-2020 #rso {
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+html.og-2020.og-web #rhs {
+  float: left !important;
+  width: 372px !important;
+  max-width: 372px !important;
+  margin: 0 0 0 44px !important;
+  padding: 0 !important;
+}
+
+html.og-2020.og-web #rhs > div.og-kp,
+html.og-2020.og-web #rhs .kp-wholepage {
+  border: 1px solid var(--og-border) !important;
+  border-radius: 8px !important;
+  background: var(--og-bg) !important;
+  box-shadow: none !important;
+  padding: 12px 16px !important;
+  font-size: 14px !important;
+}
+
+/* No knowledge panel on this query: take the column out of the layout so it
+   can neither draw a stray hairline nor push the results around. */
+html.og-2020.og-web #rhs.og-kp-empty {
+  display: none !important;
+}
+
+@media (max-width: 1264px) {
+  html.og-2020.og-web #cnt.og-offset,
+  html.og-2020.og-web #rcnt.og-offset {
+    padding-left: 24px !important;
+  }
+  html.og-2020.og-web #foot.og-foot-bleed,
+  html.og-2020 #footcnt.og-foot-bleed,
+  html.og-2020 footer.og-foot-bleed,
+  html.og-2020 .fbar.og-foot-bleed {
+    margin-left: -24px !important;
+  }
+}
+@media (max-width: 1110px) {
+  html.og-2020.og-web #rhs {
+    display: none !important;
+  }
+}
+
+/* -------------------------------------------------------------- header --- */
+
+/* Nothing. Deliberately.
+ *
+ * Earlier versions rebuilt the 2020 header here: a 692px search pill, a flat tab
+ * strip, a full-width hairline under the tabs. Every one of those overrides
+ * broke something on the real page that no fixture predicted — the header
+ * disappeared entirely, "More"/"Tools" wrapped onto their own lines, a second
+ * pill nested inside Google's, Google's own tab rule got erased on one tab and
+ * doubled on another, and the search box drifted off-centre.
+ *
+ * The cause is structural, not a series of typos: the header's layout is
+ * Google's, built with flex containers whose shape is invisible from here and
+ * changes without notice. Restyling markup you cannot see works for leaf
+ * properties (colour, font) and fails for anything that participates in layout.
+ *
+ * Google's current header is already close to 2020 — white, a rounded search
+ * pill, a tab strip with a blue underline on the active tab. The remaining
+ * difference is not worth the breakage, so the extension leaves it alone. What
+ * makes a SERP look like 2020 is the results column, and that is below.
+ */
+
+/* ------------------------------------------------------------- stats ----- */
+
+html.og-2020 .og-stats,
+html.og-2020 #result-stats {
+  font-size: 14px !important;
+  line-height: 28px !important;
+  color: var(--og-muted) !important;
+  padding: 0 0 12px 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+}
+
+/* ------------------------------------------------------------ results ---- */
+
+html.og-2020 .og-result {
+  margin: 0 0 28px 0 !important;
+  padding: 0 !important;
+  max-width: 600px !important;
+  font-size: 14px !important;
+  line-height: 1.58 !important;
+}
+
+/* Favicon + breadcrumb line, above the title — the Jan 2020 arrangement. */
+html.og-2020 .og-result cite,
+html.og-2020 .og-cite {
+  display: inline-block !important;
+  font-family: arial, sans-serif !important;
+  font-style: normal !important;
+  font-size: 14px !important;
+  line-height: 1.3 !important;
+  color: var(--og-text) !important;
+  letter-spacing: normal !important;
+  padding: 0 !important;
+}
+html.og-green-urls .og-result cite,
+html.og-green-urls .og-cite {
+  color: var(--og-cite-green) !important;
+}
+
+/* 2020 showed a bare 16px favicon. Today it sits in a bordered rounded plate;
+   40-theme.js marks the icon and the empty wrappers around it. */
+html.og-2020 .og-favicon {
+  width: 16px !important;
+  height: 16px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+html.og-2020 .og-nochrome {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+}
+
+html.og-2020 .og-title,
+html.og-2020 .og-result h3 {
+  font-family: arial, sans-serif !important;
+  font-size: 20px !important;
+  font-weight: normal !important;
+  line-height: 1.3 !important;
+  color: var(--og-link) !important;
+  margin: 0 !important;
+  padding: 5px 0 3px 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+html.og-2020 .og-title-link {
+  text-decoration: none !important;
+}
+html.og-2020 .og-title-link:hover .og-title,
+html.og-2020 .og-title-link:hover h3 {
+  text-decoration: underline !important;
+}
+html.og-2020 .og-title-link:visited .og-title,
+html.og-2020 .og-title-link:visited h3 {
+  color: var(--og-visited) !important;
+}
+
+html.og-2020 .og-snippet,
+html.og-2020 .og-result .VwiC3b {
+  font-family: arial, sans-serif !important;
+  font-size: 14px !important;
+  line-height: 1.58 !important;
+  color: var(--og-snippet) !important;
+  word-wrap: break-word !important;
+  background: transparent !important;
+  -webkit-line-clamp: unset !important;
+}
+html.og-2020 .og-snippet em,
+html.og-2020 .og-result em {
+  font-style: normal !important;
+  font-weight: bold !important;
+}
+/* Dateline prefix inside snippets. */
+html.og-2020 .og-snippet .MUxGbd.wuQ4Ob,
+html.og-2020 .og-snippet span.YrbPuc {
+  color: var(--og-muted) !important;
+}
+
+/* Sitelinks. */
+html.og-2020 .og-result table a,
+html.og-2020 .og-result .usJj9c a {
+  color: var(--og-link) !important;
+  font-size: 14px !important;
+}
+
+/* -------------------------------------------------- people also ask ------ */
+
+html.og-2020 .related-question-pair,
+html.og-2020 [jsname="Cpkphb"] {
+  font-size: 16px !important;
+}
+html.og-2020 #rso div[data-initq],
+html.og-2020 .cUnQKe {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 0 28px 0 !important;
+  max-width: 652px !important;
+}
+
+/* ------------------------------------------------------------- footer ---- */
+
+/* Off by request: the bar carrying "Results are not personalized" and the
+   location line. Not gated on og-2020 — it should go whether or not the skin is
+   on. Scoped to ids/classes that are only ever the SERP footer. */
+html.og-hide-footer #foot,
+html.og-hide-footer #footcnt,
+html.og-hide-footer .fbar,
+html.og-hide-footer body > footer {
+  display: none !important;
+}
+
+
+/* #center_col and #rhs are floated, so anything after them must clear or it
+   ends up parked to the right of the results as a stray grey box. In 2020 this
+   was a full-width bar pinned under everything — including the
+   "Results are not personalized" / location line. */
+html.og-2020 #foot,
+html.og-2020 footer,
+html.og-2020 .fbar,
+html.og-2020 #footcnt {
+  clear: both !important;
+  float: none !important;
+  width: auto !important;
+  max-width: none !important;
+  position: static !important;
+  background: var(--og-footer-bg) !important;
+  border-top: 1px solid var(--og-footer-border) !important;
+  color: var(--og-muted) !important;
+  font-size: 14px !important;
+  padding: 0 !important;
+  margin-top: 32px !important;
+  margin-bottom: 0 !important;
+  margin-right: 0 !important;
+}
+html.og-2020 #foot a,
+html.og-2020 footer a,
+html.og-2020 .fbar a {
+  color: var(--og-muted) !important;
+  text-decoration: none !important;
+}
+html.og-2020 #foot a:hover,
+html.og-2020 footer a:hover {
+  text-decoration: underline !important;
+}
+
+/* ------------------------------------------------------- classic pager --- */
+
+html.og-2020.og-web #og-pager-wrap {
+  clear: both;
+  padding: 24px 0 40px 0;
+  max-width: 652px;
+}
+
+html.og-2020 .og-pager {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 16px;
+  font-family: arial, sans-serif;
+  font-size: 13px;
+}
+
+html.og-2020 .og-pager-prev,
+html.og-2020 .og-pager-next {
+  min-width: 76px;
+  padding-bottom: 4px;
+}
+html.og-2020 .og-pager-next {
+  text-align: right;
+}
+html.og-2020 .og-pager-nav {
+  color: #4285f4 !important;
+  text-decoration: none !important;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+html.og-2020 .og-pager-nav:hover {
+  text-decoration: underline !important;
+}
+html.og-2020 .og-pager-arrow {
+  font-size: 18px;
+  line-height: 1;
+}
+
+html.og-2020 .og-pager-logo {
+  display: flex;
+  align-items: flex-end;
+  font-family: arial, sans-serif;
+  letter-spacing: -1px;
+  user-select: none;
+}
+
+html.og-2020 .og-pager-letter {
+  font-size: 36px;
+  line-height: 34px;
+  font-weight: normal;
+}
+html.og-2020 .og-blue { color: #4285f4; }
+html.og-2020 .og-red { color: #ea4335; }
+html.og-2020 .og-green { color: #34a853; }
+
+html.og-2020 .og-pager-o {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-decoration: none !important;
+  width: 20px;
+}
+html.og-2020 .og-pager-glyph {
+  font-size: 36px;
+  line-height: 34px;
+}
+html.og-2020 .og-pager-num {
+  font-size: 13px;
+  line-height: 16px;
+  color: #4285f4;
+  letter-spacing: normal;
+}
+html.og-2020 a.og-pager-o:hover .og-pager-num {
+  text-decoration: underline;
+}
+html.og-2020 .og-pager-current .og-pager-glyph {
+  color: var(--og-muted-strong) !important;
+}
+html.og-2020 .og-pager-current .og-pager-num {
+  color: var(--og-muted-strong);
+  font-weight: bold;
+}
+
+/* ---------------------------------------------------------- suppress ----- */
+
+html.og-2020 [data-og-hidden] {
+  display: none !important;
+}
+
+/* Sticky bars and floating widgets are a post-2020 invention. */
+html.og-2020 #searchform.minidiv,
+html.og-2020 .sfbgg,
+html.og-2020 [style*="position: sticky"],
+html.og-2020 [style*="position:sticky"] {
+  position: static !important;
+}

@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Old Google — inference host</title>
+  </head>
+  <body>
+    <!--
+      An offscreen document exists only to host the QA model. The service worker
+      is torn down whenever it goes idle, which would mean reloading 63 MB on
+      every search; a content script would run inference on the page's own
+      thread. This page stays alive between queries and holds the ONNX session.
+    -->
+    <script src="/vendor/ort/ort.wasm.min.js"></script>
+    <script src="/src/offscreen/wordpiece.js"></script>
+    <script src="/src/offscreen/offscreen.js"></script>
+  </body>
+</html>

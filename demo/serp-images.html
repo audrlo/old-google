@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Old Google — Images tab fixture</title>
+<link rel="stylesheet" href="../src/content/hide-ai.css">
+<link rel="stylesheet" href="../src/content/theme-2020.css">
+<link rel="stylesheet" href="../src/content/snippet.css">
+<style>
+  body { margin:0; }
+  .hdr { padding:20px 0 0 180px; }
+  #megapill { display:inline-flex; align-items:center; width:1000px; padding:0 16px;
+              border:1px solid #dfe1e5; border-radius:24px; vertical-align:middle; }
+  .hdr input { border:0; width:100%; height:42px; }
+  #tabrow { display:flex; align-items:center; padding-left:180px; }
+  #hdtb-msb { display:flex; }
+  #hdtb-msb a { padding:16px 12px; }
+  /* the Images grid: full-bleed, nothing like the 652px text column */
+  #islrg { display:grid; grid-template-columns:repeat(5,1fr); gap:12px; padding:16px; }
+  .isv-r { background:#eee; height:180px; border-radius:8px; }
+</style>
+</head>
+<body>
+<!--
+  The Images vertical: no #center_col, no #rhs, a full-bleed grid. Forcing the
+  2020 text-column geometry here pushed the grid 180px right and off the edge,
+  so the page scrolled sideways.
+-->
+<div id="gsr">
+  <form role="search" id="searchform">
+    <div class="hdr" id="headerwrap">
+      <span class="lg" id="logo"><span style="color:#4285f4">G</span><span style="color:#ea4335">o</span><span style="color:#fbbc05">o</span><span style="color:#4285f4">g</span><span style="color:#34a853">l</span><span style="color:#ea4335">e</span></span>
+      <span id="megapill"><span id="innerwrap"><input name="q" value="what do gazelles eat"></span></span>
+    </div>
+  </form>
+  <div id="tabrow">
+    <div id="hdtb-msb" role="navigation">
+      <div class="hdtb-mitem"><a href="/search?q=x">All</a></div>
+      <div class="hdtb-mitem hdtb-msel"><a href="/search?q=x&udm=2" aria-current="page">Images</a></div>
+      <div class="hdtb-mitem"><a href="/search?q=x&udm=7">Videos</a></div>
+      <div class="hdtb-mitem"><a href="/search?q=x&udm=50" aria-label="AI Mode">AI Mode</a></div>
+    </div>
+    <div id="more">More</div>
+    <div id="tools">Tools</div>
+  </div>
+
+  <div id="cnt"><div id="rcnt">
+    <div id="center_col">
+      <div id="search"><div id="rso">
+        <div id="islrg">
+          <div class="isv-r"></div><div class="isv-r"></div><div class="isv-r"></div>
+          <div class="isv-r"></div><div class="isv-r"></div><div class="isv-r"></div>
+          <div class="isv-r"></div><div class="isv-r"></div><div class="isv-r"></div>
+          <div class="isv-r"></div>
+        </div>
+      </div></div>
+    </div>
+  </div></div>
+</div>
+
+<script>
+window.chrome = {
+  storage: { sync:{get:async()=>({}),set:async()=>{}}, local:{get:async()=>({}),set:async()=>{}}, onChanged:{addListener(){}} },
+  runtime: { lastError:null, sendMessage(m,cb){ setTimeout(()=>cb({ok:false,error:'offline'}),20); } },
+};
+</script>
+<script src="../src/content/00-state.js"></script>
+<script src="../src/content/10-purge.js"></script>
+<script src="../src/content/20-extract.js"></script>
+<script src="../src/content/30-snippet.js"></script>
+<script src="../src/content/40-theme.js"></script>
+<script>
+const OG = window.OG;
+OG.settings.debug = true;
+OG.isSearchPage = () => true;
+OG.isResultsPage = () => true;
+OG.query = () => 'what do gazelles eat';
+OG.startIndex = () => 0;
+OG.applyClasses(); OG.purgeAI(); OG.theme(); OG.buildPagination(); OG.ensureSnippet();
+window.__ready = true;
+</script>
+</body>
+</html>

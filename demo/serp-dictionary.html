@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Old Google — dictionary panel fixture</title>
+<link rel="stylesheet" href="../src/content/hide-ai.css">
+<link rel="stylesheet" href="../src/content/theme-2020.css">
+<link rel="stylesheet" href="../src/content/snippet.css">
+<style>
+  body { margin:0; }
+  .hdr { padding:20px 0 0 180px; }
+  #megapill { display:inline-flex; align-items:center; width:1000px; padding:0 16px;
+              border:1px solid #dfe1e5; border-radius:24px; vertical-align:middle; }
+  .hdr input { border:0; width:100%; height:42px; }
+  #tabrow { display:flex; align-items:center; padding-left:180px; border-bottom:1px solid #ebebeb; }
+  #hdtb-msb { display:flex; } #hdtb-msb a { padding:16px 12px; color:#5f6368; text-decoration:none; font-size:13px; }
+</style>
+</head>
+<body>
+<div id="gsr">
+  <form role="search" id="searchform"><div class="hdr" id="headerwrap">
+    <span class="lg" id="logo"><span style="color:#4285f4">G</span><span style="color:#ea4335">o</span><span style="color:#fbbc05">o</span><span style="color:#4285f4">g</span><span style="color:#34a853">l</span><span style="color:#ea4335">e</span></span>
+    <span id="megapill"><span><input name="q" value="gazelle definition"></span></span>
+  </div></form>
+  <div id="tabrow"><div id="hdtb-msb" role="navigation">
+    <div><a href="/search?q=x" aria-current="page">All</a></div><div><a href="/search?q=x&udm=2">Images</a></div>
+  </div></div>
+  <div id="cnt"><div id="rcnt"><div id="center_col">
+    <div id="result-stats">About 8,120,000 results (0.41 seconds)</div>
+    <div id="search"><div id="rso">
+      <div class="MjjYud" data-hveid="r1">
+        <div class="yuRUbf"><a href="https://www.merriam-webster.com/dictionary/gazelle">
+          <div class="byrV5b"><span class="favplate"><img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" width="16" height="16" alt=""></span>
+            <div><span class="VuuXrf">Merriam-Webster</span><div><cite>https://www.merriam-webster.com › dictionary › gazelle</cite></div></div>
+          </div><h3>GAZELLE Definition &amp; Meaning</h3></a></div>
+        <div class="VwiC3b">The meaning of GAZELLE is any of numerous small swift graceful antelopes.</div>
+      </div>
+    </div></div>
+    <div id="botstuff"></div>
+  </div><div id="rhs"><div></div></div></div></div>
+</div>
+<script>
+const API = [{
+  word: 'gazelle',
+  phonetic: '/ɡəˈzɛl/',
+  phonetics: [{ text: '/ɡəˈzɛl/' }],
+  meanings: [
+    { partOfSpeech: 'noun',
+      definitions: [
+        { definition: 'Any of numerous antelopes of the genus Gazella, noted for their grace and speed.', example: 'a herd of gazelles grazed on the plain', synonyms: ['antelope'] },
+        { definition: 'A light yellowish-brown colour, like that of a gazelle.', example: '', synonyms: [] },
+      ],
+      synonyms: ['antelope', 'springbok', 'impala'], antonyms: [] },
+    { partOfSpeech: 'verb',
+      definitions: [{ definition: 'To move with the light, bounding grace of a gazelle.', example: 'she gazelled across the field', synonyms: [] }],
+      synonyms: [], antonyms: [] },
+  ],
+  sourceUrls: ['https://en.wiktionary.org/wiki/gazelle'],
+}];
+window.chrome = {
+  storage: { sync:{get:async()=>({}),set:async()=>{}}, local:{get:async()=>({}),set:async()=>{}}, onChanged:{addListener(){}} },
+  runtime: { lastError:null, sendMessage(m,cb){
+    if (m.type === 'og:fetchJson') return void setTimeout(()=>cb({ok:true,data:API}), 60);
+    setTimeout(()=>cb({ok:false,error:'offline'}), 30);
+  } },
+};
+</script>
+<script src="../src/content/00-state.js"></script>
+<script src="../src/content/10-purge.js"></script>
+<script src="../src/content/20-extract.js"></script>
+<script src="../src/content/25-dictionary.js"></script>
+<script src="../src/content/30-snippet.js"></script>
+<script src="../src/content/40-theme.js"></script>
+<script>
+const OG = window.OG;
+OG.settings.debug = true;
+OG.isSearchPage = () => true; OG.isResultsPage = () => true;
+OG.query = () => 'gazelle definition'; OG.startIndex = () => 0;
+OG.applyClasses(); OG.purgeAI(); OG.theme(); OG.ensureDictionary(); OG.ensureSnippet(); OG.buildPagination();
+setTimeout(() => { OG.ensureSnippet(); window.__ready = true; }, 300);
+</script>
+</body>
+</html>

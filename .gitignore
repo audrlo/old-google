@@ -1,0 +1,16 @@
+# Dependencies
+test/node_modules/
+
+# Bundled binaries — fetched by tools/fetch-model.sh, not committed.
+# qa.onnx is 63 MB and ONNX Runtime's WASM is 13 MB; both are reproducible
+# downloads, and GitHub starts warning past 50 MB.
+vendor/model/*.onnx
+vendor/model/vocab.txt
+vendor/ort/*.wasm
+vendor/ort/*.mjs
+vendor/ort/*.js
+
+# Scratch
+demo/live-serp.html
+demo/live-diagnose.png
+.DS_Store

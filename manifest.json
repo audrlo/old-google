@@ -1,0 +1,112 @@
+{
+  "manifest_version": 3,
+  "name": "Old Google (2020)",
+  "version": "1.0.0",
+  "description": "Brings back the 2020 Google Search look, removes the AI Overview, and restores classic single-source featured snippets \u2014 with today's results.",
+  "permissions": [
+    "offscreen",
+    "storage"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "src/background/service-worker.js"
+  },
+  "action": {
+    "default_title": "Old Google (2020)",
+    "default_popup": "src/popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://www.google.com/*",
+        "*://www.google.ad/*",
+        "*://www.google.ae/*",
+        "*://www.google.at/*",
+        "*://www.google.be/*",
+        "*://www.google.ca/*",
+        "*://www.google.ch/*",
+        "*://www.google.cl/*",
+        "*://www.google.cn/*",
+        "*://www.google.co.id/*",
+        "*://www.google.co.il/*",
+        "*://www.google.co.in/*",
+        "*://www.google.co.jp/*",
+        "*://www.google.co.kr/*",
+        "*://www.google.co.nz/*",
+        "*://www.google.co.th/*",
+        "*://www.google.co.uk/*",
+        "*://www.google.co.za/*",
+        "*://www.google.com.ar/*",
+        "*://www.google.com.au/*",
+        "*://www.google.com.br/*",
+        "*://www.google.com.co/*",
+        "*://www.google.com.eg/*",
+        "*://www.google.com.hk/*",
+        "*://www.google.com.mx/*",
+        "*://www.google.com.my/*",
+        "*://www.google.com.ng/*",
+        "*://www.google.com.pe/*",
+        "*://www.google.com.ph/*",
+        "*://www.google.com.pk/*",
+        "*://www.google.com.sa/*",
+        "*://www.google.com.sg/*",
+        "*://www.google.com.tr/*",
+        "*://www.google.com.tw/*",
+        "*://www.google.com.ua/*",
+        "*://www.google.com.vn/*",
+        "*://www.google.cz/*",
+        "*://www.google.de/*",
+        "*://www.google.dk/*",
+        "*://www.google.es/*",
+        "*://www.google.fi/*",
+        "*://www.google.fr/*",
+        "*://www.google.gr/*",
+        "*://www.google.hu/*",
+        "*://www.google.ie/*",
+        "*://www.google.it/*",
+        "*://www.google.nl/*",
+        "*://www.google.no/*",
+        "*://www.google.pl/*",
+        "*://www.google.pt/*",
+        "*://www.google.ro/*",
+        "*://www.google.rs/*",
+        "*://www.google.ru/*",
+        "*://www.google.se/*",
+        "*://www.google.sk/*"
+      ],
+      "run_at": "document_start",
+      "all_frames": false,
+      "css": [
+        "src/content/hide-ai.css",
+        "src/content/theme-2020.css",
+        "src/content/snippet.css"
+      ],
+      "js": [
+        "src/content/00-state.js",
+        "src/content/10-purge.js",
+        "src/content/20-extract.js",
+        "src/content/25-dictionary.js",
+        "src/content/30-snippet.js",
+        "src/content/40-theme.js",
+        "src/content/50-main.js"
+      ]
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
+  }
+}

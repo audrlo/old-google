@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Old Google — hostile SERP fixture</title>
+<link rel="stylesheet" href="../src/content/hide-ai.css">
+<link rel="stylesheet" href="../src/content/theme-2020.css">
+<link rel="stylesheet" href="../src/content/snippet.css">
+<style>
+  body { margin:0; }
+  .hdr { padding:20px 0 0 180px; }
+  .hdr .lg { display:inline-block; font-size:26px; margin-right:34px; vertical-align:middle; }
+  #megapill { display:inline-flex; align-items:center; width:1000px; padding:0 16px;
+              vertical-align:middle; border:1px solid #dfe1e5; border-radius:24px; }
+  #outerpill { display:inline-flex; align-items:center; flex:1;
+               border:1px solid #dfe1e5; border-radius:24px; }
+  #searchbtn { padding-left:12px; }
+  .favplate { display:inline-flex; align-items:center; justify-content:center;
+              border:1px solid #dadce0; border-radius:50%; padding:4px; background:#f1f3f4; }
+  #paa { border:1px solid #dfe1e5; border-radius:8px; padding:12px; }
+  #innerwrap { flex:1; }
+  #btns { display:flex; gap:12px; padding-left:12px; }
+  .hdr input { border:0; width:100%; height:42px; }
+  #tabrow { display:flex; align-items:center; padding-left:180px; border-bottom:1px solid #ebebeb; }
+  #hdtb-msb { display:flex; }
+  #hdtb-msb a { padding:16px 12px; }  /* Google supplies this on the real page */
+  #more, #tools { padding:16px 12px; font-size:13px; color:#5f6368; }
+</style>
+</head>
+<body>
+<!--
+  Reproduces the three ways this broke on live Google:
+   1. an obfuscated class Google recycled onto a HEADER container (.M8OgIe)
+   2. the AI Mode tab sitting inside a [data-hveid] that also wraps the header
+   3. an #rhs that exists but is empty, drawing a hairline across the page
+  Plus the modern two-line site header and the "About this result" menu.
+-->
+<div id="gsr">
+<div data-hveid="CAEQAA" class="M8OgIe">
+  <form role="search" id="searchform">
+    <!-- 4. a wrapper holding BOTH the logo and the search box: an over-broad
+            pill selector drew a second rounded border around the whole header -->
+    <div class="hdr" id="headerwrap">
+      <span class="lg" id="logo"><span style="color:#4285f4">G</span><span style="color:#ea4335">o</span><span style="color:#fbbc05">o</span><span style="color:#4285f4">g</span><span style="color:#34a853">l</span><span style="color:#ea4335">e</span></span>
+      <!-- 7. Google's own pill, wrapping the field AND the buttons. No .RNNXgb
+              class: that is gone from 2026 Google. Styling the field's own
+              wrapper (#innerwrap) instead nests a second pill inside this one. -->
+      <span id="megapill">
+        <span id="outerpill">
+          <span id="innerwrap"><input name="q" value="what does a gazelle eat"></span>
+          <span id="btns"><span>&times;</span><a href="/" id="lensbtn" aria-label="Search by image">&#9673;</a></span>
+        </span>
+        <span id="searchbtn">&#128269;</span>
+      </span>
+    </div>
+  </form>
+  <!-- 5. the tab row: the list is narrower than the window, and "More"/"Tools"
+          sit outside it, so a rule on the list alone renders in segments -->
+  <div id="tabrow">
+    <div id="hdtb-msb" role="navigation">
+      <div class="hdtb-mitem hdtb-msel"><a href="/search?q=x" aria-current="page">All</a></div>
+      <div class="hdtb-mitem"><a href="/search?q=x&udm=2">Images</a></div>
+      <div class="hdtb-mitem"><a href="/search?q=x&udm=7">Videos</a></div>
+      <div class="hdtb-mitem"><a href="/search?q=x&udm=50" aria-label="AI Mode">AI Mode</a></div>
+    </div>
+    <div id="more">More</div>
+    <div id="tools">Tools</div>
+  </div>
+</div>
+
+<div id="cnt"><div id="rcnt">
+  <div id="center_col">
+    <div id="search"><div id="rso">
+      <div data-hveid="aio" class="LT6XE"><div data-subtree="aio">
+        <h2 role="heading">AI Overview</h2><div>Gazelles are herbivores that graze on…</div>
+      </div></div>
+
+      <div class="MjjYud" data-hveid="r1">
+        <div class="yuRUbf" data-snf="x"><a href="https://www.squawmountainranch.com/gazelle-eating-habits">
+          <div class="byrV5b">
+            <span class="favplate"><img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" width="16" height="16" alt=""></span>
+            <div>
+              <span class="VuuXrf">Squaw Mountain Ranch</span>
+              <div><cite>https://www.squawmountainranch.com › gazelle-eating-...</cite></div>
+            </div>
+          </div>
+          <h3>Gazelle Eating Habits</h3>
+        </a>
+        <div role="button" aria-label="About this result">⋮</div></div>
+        <div class="VwiC3b">Gazelles are herbivores. <em>They will typically only eat grass, shoots, plants, and herbs</em>.</div>
+      </div>
+
+      <div class="MjjYud" data-hveid="paaWrap"><div class="cUnQKe" data-initq="paa" id="paa">
+        <div>People also ask</div>
+        <div>Are gazelles deer or goats?</div>
+        <div>How long does a gazelle live?</div>
+      </div></div>
+
+      <div class="MjjYud" data-hveid="r2">
+        <div class="yuRUbf"><a href="https://a-z-animals.com/blog/what-do-gazelles-eat">
+          <div class="byrV5b">
+            <span class="favplate"><img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" width="16" height="16" alt=""></span>
+            <div>
+              <span class="VuuXrf">A-Z Animals</span>
+              <div><cite>https://a-z-animals.com › blog › what-do-gazelles-eat</cite></div>
+            </div>
+          </div>
+          <h3>What Do Gazelles Eat? 8 Staples of Their Diet</h3>
+        </a></div>
+        <div class="VwiC3b">Gazelles eat grass, leaves, plants of any kind, and bushes or shrubs.</div>
+      </div>
+    </div></div>
+    <div id="botstuff"></div>
+  </div>
+  <!-- exists, but empty: this is what drew the stray line -->
+  <div id="rhs"><div></div><div></div></div>
+</div>
+<div id="foot"><div id="footcnt">Results are not personalized &middot; Hillsborough, CA</div></div>
+</div>
+</div>
+
+<script>
+/* ?dark=1 mimics Google's own dark SERP: Google paints the ground and the text,
+   the extension must follow rather than force white underneath light-grey text. */
+if (new URLSearchParams(location.search).get('dark') === '1') {
+  const st = document.createElement('style');
+  st.textContent = `
+    body { background:#202124; color:#e8eaed; }
+    #megapill { background:#303134; border-color:#5f6368; }
+    .hdr input { background:transparent; color:#e8eaed; }
+    #hdtb-msb a, #more, #tools { color:#bdc1c6; }
+    #paa, #paa div { color:#e8eaed; }
+    #foot { background:#171717; color:#bdc1c6; }
+  `;
+  document.head.appendChild(st);
+}
+</script>
+<script>
+window.chrome = {
+  storage: { sync:{get:async()=>({}),set:async()=>{}}, local:{get:async()=>({}),set:async()=>{}}, onChanged:{addListener(){}} },
+  runtime: { lastError:null, sendMessage(m,cb){
+    // ?slow=1 simulates a source page that takes a while to fetch, so the
+    // provisional card can be observed before the real passage lands.
+    const slow = new URLSearchParams(location.search).get('slow') === '1';
+    if (!slow) return void setTimeout(()=>cb({ok:false,error:'blocked'}),50);
+    setTimeout(()=>cb({ok:true,finalUrl:'https://www.squawmountainranch.com/gazelle-eating-habits',
+      html:'<html><head><title>Gazelle Eating Habits</title></head><body><article>'+
+           '<h1>Gazelle Eating Habits</h1>'+
+           '<p>There are 19 different species of gazelles and each one has different characteristics. '+
+           'Despite the number of different species, gazelles share common traits when it comes to their eating habits and diet.</p>'+
+           '</article></body></html>'}), 1500);
+  } },
+};
+</script>
+<script src="../src/content/00-state.js"></script>
+<script src="../src/content/10-purge.js"></script>
+<script src="../src/content/20-extract.js"></script>
+<script src="../src/content/30-snippet.js"></script>
+<script src="../src/content/40-theme.js"></script>
+<script>
+const OG = window.OG;
+OG.settings.debug = true;
+OG.settings.hideFooter = (new URLSearchParams(location.search).get('footer') !== 'show');
+OG.isSearchPage = () => true;
+OG.isResultsPage = () => true;
+OG.query = () => 'what does a gazelle eat';
+OG.startIndex = () => 0;
+OG.applyClasses();
+OG.purgeAI();
+OG.theme();
+OG.buildPagination();
+OG.ensureSnippet();
+window.__ready = true;
+</script>
+</body>
+</html>
