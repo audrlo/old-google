@@ -99,6 +99,17 @@ function check(name, cond, detail) {
         return { border: cs.borderBottomWidth, color: cs.borderBottomColor, w: Math.round(b.width) };
       })(),
       tabLinkColor: getComputedStyle(document.querySelector('#hdtb-msb a')).color,
+      colLeft: Math.round(document.getElementById('center_col').getBoundingClientRect().left),
+      tabTextLeft: (() => {
+        const a = document.querySelector('#hdtb-msb a');
+        if (!a) return null;
+        return Math.round(a.getBoundingClientRect().left + parseFloat(getComputedStyle(a).paddingLeft));
+      })(),
+      tabRule: (() => {
+        const n = document.getElementById('tabrow');
+        const b = n.getBoundingClientRect();
+        return { left: Math.round(b.left), width: Math.round(b.width) };
+      })(),
       viewportWidth: document.documentElement.clientWidth,
       footText: (() => {
         const n = document.getElementById('footcnt');
@@ -154,6 +165,10 @@ function check(name, cond, detail) {
     r.googlePill && r.googlePill.border === '1px' && r.googlePill.radius === '24px' && r.googlePill.w > 900, r.googlePill);
   check("Google's rule under the tabs is untouched",
     r.googleTabRule && r.googleTabRule.border === '1px' && r.googleTabRule.color === 'rgb(235, 235, 235)', r.googleTabRule);
+  check('the results column lines up with the tab text', r.colLeft === r.tabTextLeft,
+    { column: r.colLeft, tabText: r.tabTextLeft });
+  check("Google's tab rule starts at the window edge, not at the gutter",
+    r.tabRule.left === 0 && Math.abs(r.tabRule.width - r.viewportWidth) <= 2, r.tabRule);
   check('that rule still spans the window',
     r.googleTabRule && Math.abs(r.googleTabRule.w - r.viewportWidth) <= 4, { w: r.googleTabRule && r.googleTabRule.w, viewportWidth: r.viewportWidth });
   check('tab links keep their own colour (browser default here, Google\'s on the real page)',

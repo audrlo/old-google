@@ -27,10 +27,12 @@ function check(name, cond, detail) {
       hasThemeClass: document.documentElement.classList.contains('og-2020'),
       scrollWidth: document.documentElement.scrollWidth,
       clientWidth: document.documentElement.clientWidth,
-      offsetPad: (() => {
-        const n = document.querySelector('.og-offset');
-        return n ? getComputedStyle(n).paddingLeft : null;
+      tabsLeft: (() => {
+        const a = document.querySelector('#hdtb-msb a');
+        return a ? Math.round(a.getBoundingClientRect().left) : null;
       })(),
+      tabRuleLeft: Math.round(document.getElementById('tabrow').getBoundingClientRect().left),
+      tabRuleWidth: Math.round(document.getElementById('tabrow').getBoundingClientRect().width),
       colWidth: getComputedStyle(document.getElementById('center_col')).width,
       gridRight: Math.round(document.getElementById('islrg').getBoundingClientRect().right),
       pager: !!document.getElementById('og-pager-wrap'),
@@ -42,7 +44,8 @@ function check(name, cond, detail) {
     console.log('\n' + label);
     check('not treated as the web tab', r.isWebTab === false && r.hasWebClass === false, r);
     check('no horizontal scrolling', r.scrollWidth <= r.clientWidth + 1, { scrollWidth: r.scrollWidth, clientWidth: r.clientWidth });
-    check('no 180px gutter forced on the grid', r.offsetPad === '0px' || r.offsetPad === null, r.offsetPad);
+    check('the tab rule still spans the window', Math.abs(r.tabRuleWidth - r.clientWidth) <= 2 && r.tabRuleLeft === 0,
+      { left: r.tabRuleLeft, width: r.tabRuleWidth, viewport: r.clientWidth });
     check('column is not squeezed to 652px', r.colWidth !== '652px', r.colWidth);
     check('grid stays inside the viewport', r.gridRight <= r.clientWidth + 1, { gridRight: r.gridRight, clientWidth: r.clientWidth });
     check('no numbered pager on this vertical', r.pager === false);
@@ -56,14 +59,45 @@ function check(name, cond, detail) {
   await web.goto(base);
   await web.waitForFunction(() => window.__ready === true);
   await web.waitForTimeout(200);
-  const w = await web.evaluate(() => ({
-    isWebTab: window.OG.isWebTab(),
-    hasWebClass: document.documentElement.classList.contains('og-web'),
-    offsetPad: (() => { const n = document.querySelector('.og-offset'); return n ? getComputedStyle(n).paddingLeft : null; })(),
-  }));
+  const w = await web.evaluate(() => {
+    const a = document.querySelector('#hdtb-msb a');
+    const row = document.getElementById('tabrow').getBoundingClientRect();
+    return {
+      isWebTab: window.OG.isWebTab(),
+      hasWebClass: document.documentElement.classList.contains('og-web'),
+      tabsLeft: a ? Math.round(a.getBoundingClientRect().left) : null,
+      tabRuleLeft: Math.round(row.left),
+      tabRuleWidth: Math.round(row.width),
+      colLeft: Math.round(document.getElementById('center_col').getBoundingClientRect().left),
+      gutter: getComputedStyle(document.documentElement).getPropertyValue('--og-gutter').trim(),
+      tabTextLeft: a ? Math.round(a.getBoundingClientRect().left + parseFloat(getComputedStyle(a).paddingLeft)) : null,
+      clientWidth: document.documentElement.clientWidth,
+    };
+  });
   console.log('\nAll tab (no udm) is unaffected');
   check('still treated as the web tab', w.isWebTab === true && w.hasWebClass === true, w);
-  check('still gets the 180px gutter', w.offsetPad === '180px', w.offsetPad);
+  check('the results column lines up with the tab text', w.colLeft === w.tabTextLeft, {
+    column: w.colLeft, tabText: w.tabTextLeft, gutter: w.gutter,
+  });
+  check('the tab rule spans the window here too',
+    w.tabRuleLeft === 0 && Math.abs(w.tabRuleWidth - w.clientWidth) <= 2,
+    { left: w.tabRuleLeft, width: w.tabRuleWidth, viewport: w.clientWidth });
+
+  /* The complaint that started this: switching to Images moved the whole
+   * header sideways, because the gutter was padding on a container the tab
+   * strip lived inside. */
+  const img = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+  await img.goto(base + '?udm=2');
+  await img.waitForFunction(() => window.__ready === true);
+  await img.waitForTimeout(150);
+  const i = await img.evaluate(() => {
+    const a = document.querySelector('#hdtb-msb a');
+    return { tabsLeft: a ? Math.round(a.getBoundingClientRect().left) : null };
+  });
+  await img.close();
+  check('the tab strip does not move between All and Images', w.tabsLeft === i.tabsLeft, {
+    all: w.tabsLeft, images: i.tabsLeft,
+  });
   await web.close();
 
   await browser.close();

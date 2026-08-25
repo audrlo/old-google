@@ -50,24 +50,37 @@
 
   /* ------------------------- stable hooks ---------------------------- */
 
-  /** #cnt wraps #rcnt; whichever is outermost owns the 180px left gutter. */
-  OG.markOffset = function () {
-    const outer = document.getElementById('cnt') || document.getElementById('rcnt');
-    if (!outer) return;
-    for (const stale of OG.qsa('.og-offset')) {
-      if (stale !== outer) stale.classList.remove('og-offset');
+  /**
+   * Align the results column with Google's own tab strip.
+   *
+   * The gutter used to be padding on #cnt/#rcnt, but the tab strip lives inside
+   * those, so it was shifted along with the results — the rule under the tabs
+   * started 180px in instead of at the window edge, and switching to a tab that
+   * did not get the gutter made the whole header jump sideways.
+   *
+   * So measure where Google actually puts the tabs and offset only the columns
+   * to match. That keeps the two aligned on every tab and at every width, and
+   * leaves the header untouched, which is the rule everywhere else here.
+   */
+  OG.markColumns = function () {
+    const root = document.documentElement;
+    for (const stale of OG.qsa('.og-offset, .og-foot-bleed')) {
+      stale.classList.remove('og-offset');
+      stale.classList.remove('og-foot-bleed');
     }
-    outer.classList.add('og-offset');
 
-    // The 2020 footer bar ran edge to edge. When it lives inside the container
-    // carrying the gutter it inherits the 180px inset, so it has to escape.
-    // Only the OUTERMOST footer element bleeds — #footcnt sits inside #foot, and
-    // letting both escape applies the offset twice and pushes the text off-screen.
-    const feet = OG.qsa('#foot, footer, .fbar, #footcnt');
-    for (const foot of feet) {
-      const nested = feet.some((other) => other !== foot && other.contains(foot));
-      foot.classList.toggle('og-foot-bleed', !nested && outer.contains(foot));
+    let gutter = 180; // the 2020 value, and the fallback
+    const nav = document.querySelector('#hdtb-msb, [role="navigation"] [role="list"], [role="navigation"]');
+    const firstTab = nav && nav.querySelector('a');
+    if (firstTab) {
+      const rect = firstTab.getBoundingClientRect();
+      // The link's own padding sits inside its box; the text edge is what the
+      // eye lines up against.
+      const padding = parseFloat(getComputedStyle(firstTab).paddingLeft) || 0;
+      const left = Math.round(rect.left + padding);
+      if (left >= 0 && left <= 400) gutter = left;
     }
+    root.style.setProperty('--og-gutter', gutter + 'px');
   };
 
   /**
@@ -269,7 +282,7 @@
 
   OG.theme = function () {
     OG.detectTheme();
-    OG.markOffset();
+    OG.markColumns();
     OG.markKnowledgePanel();
     OG.markResults();
     OG.fixStats();

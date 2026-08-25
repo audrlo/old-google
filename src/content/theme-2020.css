@@ -107,33 +107,27 @@ html.og-2020.og-web #rcnt {
   display: block !important;
 }
 
-/* Only the outermost container carries the 180px gutter — #cnt and #rcnt are
-   nested, so indenting both would offset the column twice. */
-html.og-2020.og-web #cnt.og-offset,
-html.og-2020.og-web #rcnt.og-offset {
-  padding-left: 180px !important;
-}
-html.og-2020.og-web #cnt.og-offset::after,
-html.og-2020.og-web #rcnt.og-offset::after {
+/* The container only has to contain its floated children so the footer clears.
+   It must NOT carry the gutter: the tab strip lives inside it, so padding here
+   shifted the tabs and the rule under them 180px to the right — which is why
+   the rule appeared to start partway across, and why everything jumped sideways
+   when switching to a tab that does not get the gutter. The gutter belongs on
+   the columns themselves. */
+html.og-2020.og-web #cnt::after,
+html.og-2020.og-web #rcnt::after {
   content: '';
   display: block;
   clear: both;
 }
 
-/* A footer nested inside the gutter-carrying container has to escape it to run
-   edge to edge, the way the 2020 bar did. */
-html.og-2020.og-web #foot.og-foot-bleed,
-html.og-2020 #footcnt.og-foot-bleed,
-html.og-2020 footer.og-foot-bleed,
-html.og-2020 .fbar.og-foot-bleed {
-  margin-left: -180px !important;
-}
-
+/* --og-gutter is measured from Google's own tab strip by 40-theme.js, so the
+   results column lines up with the tabs above it on every tab and at every
+   window width. 180px is the 2020 value, used only if the strip is not found. */
 html.og-2020.og-web #center_col {
   width: 652px !important;
   max-width: 652px !important;
   min-width: 0 !important;
-  margin: 0 !important;
+  margin: 0 0 0 var(--og-gutter, 180px) !important;
   padding: 0 !important;
   float: left !important;
   border: 0 !important;
@@ -168,18 +162,9 @@ html.og-2020.og-web #rhs.og-kp-empty {
   display: none !important;
 }
 
-@media (max-width: 1264px) {
-  html.og-2020.og-web #cnt.og-offset,
-  html.og-2020.og-web #rcnt.og-offset {
-    padding-left: 24px !important;
-  }
-  html.og-2020.og-web #foot.og-foot-bleed,
-  html.og-2020 #footcnt.og-foot-bleed,
-  html.og-2020 footer.og-foot-bleed,
-  html.og-2020 .fbar.og-foot-bleed {
-    margin-left: -24px !important;
-  }
-}
+/* No breakpoint for the gutter: it tracks Google's tab strip, which is already
+   responsive. */
+
 @media (max-width: 1110px) {
   html.og-2020.og-web #rhs {
     display: none !important;

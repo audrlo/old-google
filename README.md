@@ -266,6 +266,20 @@ text alone, which dropped "People also ask" to a contrast ratio of 1.21:1 —
 invisible. `test/dark.test.js` measures the contrast of every piece of text
 against whatever is actually painted behind it, in both themes.
 
+### The gutter
+
+The 2020 results column sat 180px from the left. That offset used to be padding
+on `#cnt`/`#rcnt` — but Google's tab strip lives inside those, so the tabs and
+the rule under them were shifted along with the results. The rule appeared to
+start partway across the page instead of at the window edge, and switching to a
+tab that does not get the offset (Images, Videos) made the whole header jump
+sideways.
+
+The offset now goes on the columns themselves, and its size is measured from
+where Google actually puts the tab text (`--og-gutter`, set by `40-theme.js`).
+The column lines up with the tabs on every tab and at every width, and the
+header is left alone — which is the rule everywhere else here.
+
 ## Two rules this skin follows
 
 1. **Restyle appearance, never layout.** Colour, font, border and radius are

@@ -54,8 +54,13 @@
       </span>
     </div>
   </form>
+</div>
+
+<div id="cnt">
   <!-- 5. the tab row: the list is narrower than the window, and "More"/"Tools"
-          sit outside it, so a rule on the list alone renders in segments -->
+          sit outside it, so a rule on the list alone renders in segments.
+          It lives INSIDE #cnt, as it does on the real page — which is why
+          padding #cnt dragged the tabs and their rule sideways. -->
   <div id="tabrow">
     <div id="hdtb-msb" role="navigation">
       <div class="hdtb-mitem hdtb-msel"><a href="/search?q=x" aria-current="page">All</a></div>
@@ -66,9 +71,7 @@
     <div id="more">More</div>
     <div id="tools">Tools</div>
   </div>
-</div>
-
-<div id="cnt"><div id="rcnt">
+<div id="rcnt">
   <div id="center_col">
     <div id="search"><div id="rso">
       <div data-hveid="aio" class="LT6XE"><div data-subtree="aio">
