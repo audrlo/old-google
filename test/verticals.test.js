@@ -28,7 +28,8 @@ function check(name, cond, detail) {
       scrollWidth: document.documentElement.scrollWidth,
       clientWidth: document.documentElement.clientWidth,
       tabsLeft: (() => {
-        const a = document.querySelector('#hdtb-msb a');
+        const a = Array.from(document.querySelectorAll('#hdtb-msb a'))
+          .find((n) => n.checkVisibility() && n.getBoundingClientRect().width > 8);
         return a ? Math.round(a.getBoundingClientRect().left) : null;
       })(),
       tabRuleLeft: Math.round(document.getElementById('tabrow').getBoundingClientRect().left),
@@ -60,7 +61,8 @@ function check(name, cond, detail) {
   await web.waitForFunction(() => window.__ready === true);
   await web.waitForTimeout(200);
   const w = await web.evaluate(() => {
-    const a = document.querySelector('#hdtb-msb a');
+    const a = Array.from(document.querySelectorAll('#hdtb-msb a'))
+      .find((n) => n.checkVisibility() && n.getBoundingClientRect().width > 8);
     const row = document.getElementById('tabrow').getBoundingClientRect();
     return {
       isWebTab: window.OG.isWebTab(),
@@ -91,7 +93,8 @@ function check(name, cond, detail) {
   await img.waitForFunction(() => window.__ready === true);
   await img.waitForTimeout(150);
   const i = await img.evaluate(() => {
-    const a = document.querySelector('#hdtb-msb a');
+    const a = Array.from(document.querySelectorAll('#hdtb-msb a'))
+      .find((n) => n.checkVisibility() && n.getBoundingClientRect().width > 8);
     return { tabsLeft: a ? Math.round(a.getBoundingClientRect().left) : null };
   });
   await img.close();

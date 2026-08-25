@@ -174,7 +174,12 @@
 
   /* ----------------------------- reranking -------------------------- */
 
-  const RERANK_LIMIT = 8;   // passages sent to the model per page
+  /* How long to wait for the real answer before showing Google's description
+   * as a placeholder. Long enough that a quick answer never causes a visible
+   * swap; short enough that a slow page does not leave a blank box. */
+  const STOPGAP_DELAY_MS = 700;
+
+  const RERANK_LIMIT = 6;   // passages sent to the model per page
   const QA_MIN = 3;         // below this the model has found no real answer
 
   function scorePassages(query, passages) {
@@ -496,28 +501,51 @@
     state.status = 'pending';
     const forKey = key;
 
+    /* The real answer needs a page fetch and a pass of the model, so it cannot
+     * be there instantly. Google's index description can, and showing it kept
+     * the box from sitting empty — but when the real answer arrives quickly the
+     * reader just sees the text change under them for no reason.
+     *
+     * So hold the stopgap back. If the real answer beats the delay, it is the
+     * only thing ever shown and nothing swaps. The stopgap appears only when
+     * waiting would otherwise mean staring at a blank space. */
     const stopgap = provisional();
-    if (stopgap) {
-      state.data = stopgap;
-      mount(render(stopgap));
-    }
+    let stopgapShown = false;
+    const stopgapTimer = stopgap
+      ? setTimeout(() => {
+          if (state.key !== forKey || state.status !== 'pending') return;
+          stopgapShown = true;
+          state.data = stopgap;
+          mount(render(stopgap));
+          OG.log('still working; showing the index description meanwhile');
+        }, STOPGAP_DELAY_MS)
+      : null;
 
     synthesize(OG.query()).then(
       (data) => {
+        clearTimeout(stopgapTimer);
         if (state.key !== forKey) return;
         state.status = 'done';
-        // Keep the stopgap rather than blanking the box if extraction found
-        // nothing — it is the same fallback synthesize() would have returned.
         if (!data) {
-          OG.log('no passage extracted; keeping the index description');
+          // Nothing better was found. Show the stopgap now if it never appeared.
+          if (stopgap && !stopgapShown) {
+            state.data = stopgap;
+            mount(render(stopgap));
+          }
+          OG.log('no passage extracted; showing the index description');
           return;
         }
         state.data = data;
         mount(render(data));
       },
       (err) => {
+        clearTimeout(stopgapTimer);
         if (state.key !== forKey) return;
         state.status = 'done';
+        if (stopgap && !stopgapShown) {
+          state.data = stopgap;
+          mount(render(stopgap));
+        }
         OG.log('snippet build failed', err);
       }
     );

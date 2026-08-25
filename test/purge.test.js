@@ -101,10 +101,12 @@ function check(name, cond, detail) {
       tabLinkColor: getComputedStyle(document.querySelector('#hdtb-msb a')).color,
       colLeft: Math.round(document.getElementById('center_col').getBoundingClientRect().left),
       tabTextLeft: (() => {
-        const a = document.querySelector('#hdtb-msb a');
+        const a = Array.from(document.querySelectorAll('#hdtb-msb a'))
+          .find((n) => n.checkVisibility() && n.getBoundingClientRect().width > 8);
         if (!a) return null;
         return Math.round(a.getBoundingClientRect().left + parseFloat(getComputedStyle(a).paddingLeft));
       })(),
+      gutter: getComputedStyle(document.documentElement).getPropertyValue('--og-gutter').trim(),
       tabRule: (() => {
         const n = document.getElementById('tabrow');
         const b = n.getBoundingClientRect();
@@ -167,6 +169,8 @@ function check(name, cond, detail) {
     r.googleTabRule && r.googleTabRule.border === '1px' && r.googleTabRule.color === 'rgb(235, 235, 235)', r.googleTabRule);
   check('the results column lines up with the tab text', r.colLeft === r.tabTextLeft,
     { column: r.colLeft, tabText: r.tabTextLeft });
+  check('a hidden link in the nav does not collapse the gutter to 0',
+    r.colLeft > 0 && r.gutter !== '0px', { column: r.colLeft, gutter: r.gutter });
   check("Google's tab rule starts at the window edge, not at the gutter",
     r.tabRule.left === 0 && Math.abs(r.tabRule.width - r.viewportWidth) <= 2, r.tabRule);
   check('that rule still spans the window',

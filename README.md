@@ -123,11 +123,12 @@ tell a well-written answer from a confident-sounding wrong one; nobody has solve
 that. And when nothing scores well enough it shows Google's description rather
 than guessing.
 
-Step 2 is a network round trip, so the box does not wait on it: the top result's
-index description is quoted **immediately** (labelled "Description from the web",
-no network needed) and the extracted passage replaces it in place when it lands
-(relabelled "Featured snippet from the web"). If extraction finds nothing, the
-description simply stays.
+Step 2 needs a network round trip and a pass of the model, so it cannot be
+instant. Google's index description can be — but showing it straight away means
+the reader watches one answer get replaced by another, which is worse than a
+short wait. So the description is held back ~700ms: if the real answer arrives
+first it is the only thing ever rendered and nothing swaps, and the placeholder
+appears only when waiting would otherwise mean staring at a blank box.
 
 Key property: **one source, verbatim, always attributed.** Nothing is generated, summarised, or blended across sites. If no site says it, the box doesn't appear.
 
@@ -279,6 +280,11 @@ The offset now goes on the columns themselves, and its size is measured from
 where Google actually puts the tab text (`--og-gutter`, set by `40-theme.js`).
 The column lines up with the tabs on every tab and at every width, and the
 header is left alone — which is the rule everywhere else here.
+
+The measurement takes the leftmost *visible* tab link, and needs at least two of
+them before it trusts what it found. Taking the nav's first `<a>` instead
+measured a hidden one, whose rect is 0x0 at the origin — so the gutter came out
+as 0 and every result sat flush against the left edge.
 
 ## Two rules this skin follows
 

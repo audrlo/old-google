@@ -63,6 +63,10 @@
           padding #cnt dragged the tabs and their rule sideways. -->
   <div id="tabrow">
     <div id="hdtb-msb" role="navigation">
+      <!-- 11. a hidden link first in the nav. Measuring the nav's first <a>
+               picked this one up: its rect is 0x0 at the origin, so the gutter
+               came out as 0 and the results sat flush against the left edge. -->
+      <a href="/search?q=x&hidden=1" style="display:none">hidden</a>
       <div class="hdtb-mitem hdtb-msel"><a href="/search?q=x" aria-current="page">All</a></div>
       <div class="hdtb-mitem"><a href="/search?q=x&udm=2">Images</a></div>
       <div class="hdtb-mitem"><a href="/search?q=x&udm=7">Videos</a></div>
@@ -144,7 +148,18 @@ window.chrome = {
   runtime: { lastError:null, sendMessage(m,cb){
     // ?slow=1 simulates a source page that takes a while to fetch, so the
     // provisional card can be observed before the real passage lands.
-    const slow = new URLSearchParams(location.search).get('slow') === '1';
+    const params = new URLSearchParams(location.search);
+    const slow = params.get('slow') === '1';
+    // ?fast=1: the source page comes back quickly, so the real answer should be
+    // the only thing ever rendered — no placeholder, no swap.
+    if (params.get('fast') === '1') {
+      return void setTimeout(()=>cb({ok:true,finalUrl:'https://www.squawmountainranch.com/gazelle-eating-habits',
+        html:'<html><head><title>Gazelle Eating Habits</title></head><body><article>'+
+             '<h1>Gazelle Eating Habits</h1>'+
+             '<p>There are 19 different species of gazelles and each one has different characteristics. '+
+             'Despite the number of different species, gazelles share common traits when it comes to their eating habits and diet.</p>'+
+             '</article></body></html>'}), 60);
+    }
     if (!slow) return void setTimeout(()=>cb({ok:false,error:'blocked'}),50);
     setTimeout(()=>cb({ok:true,finalUrl:'https://www.squawmountainranch.com/gazelle-eating-habits',
       html:'<html><head><title>Gazelle Eating Habits</title></head><body><article>'+

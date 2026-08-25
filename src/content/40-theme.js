@@ -69,16 +69,28 @@
       stale.classList.remove('og-foot-bleed');
     }
 
-    let gutter = 180; // the 2020 value, and the fallback
-    const nav = document.querySelector('#hdtb-msb, [role="navigation"] [role="list"], [role="navigation"]');
-    const firstTab = nav && nav.querySelector('a');
-    if (firstTab) {
-      const rect = firstTab.getBoundingClientRect();
+    // The tab links: the only /search links sitting near the top of the page.
+    // Taking the nav's first <a> instead measured a hidden one, whose rect is
+    // 0x0 at the origin — so the gutter came out as 0 and every result sat
+    // flush against the left edge.
+    const edges = [];
+    for (const link of OG.qsa('a[href*="/search"]')) {
+      if (link.hasAttribute('data-og-hidden')) continue;
+      if (link.checkVisibility && !link.checkVisibility()) continue;
+      const rect = link.getBoundingClientRect();
+      if (rect.width < 8 || rect.height < 8) continue; // hidden or collapsed
+      if (rect.top > 300) continue; // below the tab strip: a result link
       // The link's own padding sits inside its box; the text edge is what the
-      // eye lines up against.
-      const padding = parseFloat(getComputedStyle(firstTab).paddingLeft) || 0;
-      const left = Math.round(rect.left + padding);
-      if (left >= 0 && left <= 400) gutter = left;
+      // eye actually lines up against.
+      const padding = parseFloat(getComputedStyle(link).paddingLeft) || 0;
+      edges.push(Math.round(rect.left + padding));
+    }
+
+    // One stray link is not a tab strip. Require a few before trusting it.
+    let gutter = 180; // the 2020 value, and the fallback
+    if (edges.length >= 2) {
+      const left = Math.min.apply(null, edges);
+      if (left > 0 && left <= 400) gutter = left;
     }
     root.style.setProperty('--og-gutter', gutter + 'px');
   };
