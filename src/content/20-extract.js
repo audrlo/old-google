@@ -137,7 +137,11 @@
   /* ------------------------------------------------------------------ */
 
   function buildDoc(html) {
-    const doc = new DOMParser().parseFromString(html, 'text/html');
+    // A <base href> in the fetched page makes the parser try to set the
+    // document's base URI, which the extension's CSP blocks and logs as an
+    // error on the Extensions page. Drop it before parsing; nothing here
+    // resolves relative URLs against it.
+    const doc = new DOMParser().parseFromString(html.replace(/<base\b[^>]*>/gi, ''), 'text/html');
     for (const node of Array.from(doc.querySelectorAll(STRIP))) node.remove();
     return doc;
   }
