@@ -128,7 +128,9 @@ html.og-2020.og-web #center_col {
   max-width: 652px !important;
   min-width: 0 !important;
   margin: 0 0 0 var(--og-gutter, 180px) !important;
-  padding: 0 !important;
+  /* 2020 left a 20px breath between the tab strip's rule and the first result.
+     Without it the featured snippet's border fuses with that rule. */
+  padding: 20px 0 0 0 !important;
   float: left !important;
   border: 0 !important;
 }
@@ -143,7 +145,7 @@ html.og-2020.og-web #rhs {
   width: 372px !important;
   max-width: 372px !important;
   margin: 0 0 0 44px !important;
-  padding: 0 !important;
+  padding: 20px 0 0 0 !important;
 }
 
 html.og-2020.og-web #rhs > div.og-kp,
