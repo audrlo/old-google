@@ -7,11 +7,11 @@
   <body>
     <!--
       An offscreen document exists only to host the QA model. The service worker
-      is torn down whenever it goes idle, which would mean reloading 63 MB on
-      every search; a content script would run inference on the page's own
+      is torn down whenever it goes idle, which would mean reloading the model
+      on every search; a content script would run inference on the page's own
       thread. This page stays alive between queries and holds the ONNX session.
+      offscreen.js loads the WebGPU or WASM runtime once it knows which it has.
     -->
-    <script src="/vendor/ort/ort.wasm.min.js"></script>
     <script src="/src/offscreen/wordpiece.js"></script>
     <script src="/src/offscreen/offscreen.js"></script>
   </body>

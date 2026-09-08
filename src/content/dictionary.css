@@ -130,6 +130,7 @@
 .og-dict-senses {
   margin: 0;
   padding: 0 0 0 20px;
+  list-style: decimal; /* Google's page CSS resets lists */
 }
 .og-dict-senses li {
   padding-top: 10px;

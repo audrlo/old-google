@@ -25,8 +25,8 @@ The header is left alone (see below). The results themselves are untouched — t
 > Vivaldi, Opera, or plain Chromium. It will **not** work in Safari without being
 > repackaged as a Safari Web Extension.
 
-0. Fetch the binaries the repo does not carry (the 63 MB model and the ONNX
-   Runtime WASM build):
+0. Fetch the binaries the repo does not carry (the model, 133 MB fp16 for
+   WebGPU plus a 67 MB int8 fallback, and the ONNX Runtime Web builds):
 
    ```sh
    ./tools/fetch-model.sh
@@ -38,7 +38,7 @@ The header is left alone (see below). The results themselves are untouched — t
 1. Open `chrome://extensions` (or `edge://extensions`, `brave://extensions`, …).
 2. Turn on **Developer mode** (top right).
 3. Click **Load unpacked** and pick this folder: `/Users/audrey/old-google`.
-   (It is ~78 MB, almost entirely the bundled model — see below.)
+   (It is ~240 MB, almost entirely the bundled model — see below.)
 4. Go to google.com and search for something.
 
 Click the toolbar icon for settings.
@@ -70,12 +70,13 @@ When you search, the extension:
 
 Google ranked passages with BERT. So does this, locally:
 
-- **A bundled question-answering model** (`distilbert-base-uncased-distilled-squad`,
-  ONNX int8, 63 MB) scores each candidate passage by how strongly it believes an
-  answer to your query is present in it — the best answer-span logit minus the
-  `[CLS]` "no answer here" baseline. It runs on ONNX Runtime WASM inside an
-  offscreen document. Nothing is sent anywhere; there is no API and no key.
-  Turn it off in the popup and the extension falls back to keyword scoring.
+- **A bundled question-answering model** (`distilbert-base-uncased-distilled-squad`)
+  scores each candidate passage by how strongly it believes an answer to your
+  query is present in it — the best answer-span logit. It runs on ONNX Runtime
+  Web inside an offscreen document: fp16 on WebGPU, where a 250-token passage
+  takes about 8 ms, or int8 on WASM (about 70 ms) when there is no GPU adapter.
+  Nothing is sent anywhere; there is no API and no key. Turn it off in the popup
+  and the extension falls back to keyword scoring.
 - **Anchored on Google's own pick.** The one-line description under a result *is*
   Google's passage selection for that query, just truncated. The extractor
   locates that text in the source page and returns the full sentences around it.
@@ -115,6 +116,14 @@ fp32 gave the same scores. A reranker measures *topical relevance*, and a
 paragraph restating the query is maximally on-topic. "Does this passage contain
 the answer, and where" is the question a featured snippet actually asks, and
 that is extractive QA.
+
+SQuAD 2.0 models were tried too (`deepset/tinyroberta-squad2`,
+`deepset/roberta-base-squad2`), on the theory that a trained "no answer" logit
+would help. It did not: on a 15-query set where the answer shares no words with
+the question they scored 8/15 and 9/15, ranking passages that repeat the
+question above the ones that answer it. This model scores 15/15 once its
+untrained `[CLS]` null logit is left out of the score. See
+`vendor/model/SOURCE.md`.
 
 ### Remaining gaps
 

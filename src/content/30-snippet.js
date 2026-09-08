@@ -364,50 +364,25 @@
    * above them, and a snippet quoting some translation vendor's landing page
    * on top of the translate widget is worse than nothing. */
   const TOOL_WIDGETS = '#tw-container, #tw-main, #tw-ob, #cwos, #wob_wc';
-  OG.hasToolWidget = function () {
-    const col = document.getElementById('center_col') || document;
-    return !!col.querySelector(TOOL_WIDGETS);
-  };
 
   /* The source link carries a text fragment, so the browser scrolls to the
-   * quoted passage and marks it — what clicking a 2020 snippet did. The
-   * directive syntax reserves "-" "," and "&"; encodeURIComponent leaves "-"
-   * alone, so it is encoded by hand. Long passages become a start,end range on
-   * their first and last few words, which also survives the page's own line
-   * breaks and inline markup. */
+   * quoted passage and marks it — what clicking a 2020 snippet did. Long
+   * passages become a start,end range on their first and last few words, which
+   * survives the page's own line breaks and inline markup. The directive
+   * syntax reserves "-", which encodeURIComponent leaves alone. */
   const FRAGMENT_WORDS = 6;
-  function fragmentEncode(text) {
-    return encodeURIComponent(text).replace(/-/g, '%2D');
+  function fragment(text) {
+    const words = text.split(/\s+/).filter(Boolean);
+    const encode = (ws) => encodeURIComponent(ws.join(' ')).replace(/-/g, '%2D');
+    if (words.length <= FRAGMENT_WORDS * 2) return encode(words);
+    return encode(words.slice(0, FRAGMENT_WORDS)) + ',' + encode(words.slice(-FRAGMENT_WORDS));
   }
-  function fragmentFor(text) {
-    const words = String(text || '').replace(/\s+/g, ' ').trim().split(' ').filter(Boolean);
-    if (!words.length) return '';
-    if (words.length <= FRAGMENT_WORDS * 2) return fragmentEncode(words.join(' '));
-    return fragmentEncode(words.slice(0, FRAGMENT_WORDS).join(' ')) + ',' + fragmentEncode(words.slice(-FRAGMENT_WORDS).join(' '));
-  }
-  OG.snippetHref = function (data) {
-    const url = data && data.url;
-    if (!url) return url;
-    let fragment = '';
-    if (data.kind === 'paragraph') fragment = fragmentFor(data.text);
-    else if (data.kind === 'list' && data.items && data.items.length) {
-      const first = fragmentFor(data.items[0]).split(',')[0];
-      const last = fragmentFor(data.items[data.items.length - 1]);
-      fragment = data.items.length === 1 ? last : first + ',' + last.split(',').pop();
-    }
-    if (!fragment) return url;
-    const hash = url.indexOf('#');
-    const base = hash < 0 ? url : url.slice(0, hash);
-    const existing = hash < 0 ? '' : url.slice(hash + 1).split(':~:')[0];
-    return base + '#' + existing + ':~:text=' + fragment;
-  };
-
-  function rememberHighlight(url) {
-    try {
-      chrome.runtime.sendMessage({ type: 'og:highlight', url });
-    } catch (_) {
-      /* extension reloaded under us; the browser still scrolls and marks */
-    }
+  function sourceHref(data) {
+    const base = data.url.split('#')[0];
+    if (data.kind === 'paragraph') return base + '#:~:text=' + fragment(data.text);
+    if (data.kind === 'list') return base + '#:~:text=' + fragment(data.items[0]).split(',')[0] + ',' + fragment(data.items[data.items.length - 1]).split(',').pop();
+    if (data.kind === 'table') return base;
+    throw new Error('unknown snippet kind ' + data.kind);
   }
 
   function render(data) {
@@ -432,7 +407,7 @@
     line.appendChild(OG.el('cite', { class: 'og-fs-cite', text: breadcrumb(data.url) }));
     src.appendChild(line);
     src.appendChild(
-      OG.el('a', { class: 'og-fs-title', href: OG.snippetHref(data), rel: 'noopener', onclick: () => rememberHighlight(data.url) }, [
+      OG.el('a', { class: 'og-fs-title', href: sourceHref(data), rel: 'noopener', onclick: () => chrome.runtime.sendMessage({ type: 'og:highlight', url: data.url }) }, [
         OG.el('h3', { text: data.title || breadcrumb(data.url) }),
       ])
     );
@@ -532,7 +507,7 @@
     }
 
     // Google's translate boxes, calculator or weather card are the answer.
-    if (OG.hasToolWidget()) {
+    if (document.querySelector(TOOL_WIDGETS)) {
       const card = document.getElementById('og-featured');
       if (card) card.remove();
       state.status = 'done';

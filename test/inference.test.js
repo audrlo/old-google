@@ -63,7 +63,7 @@ const CASES = [
     // via the new headless mode.
     headless: true,
     channel: 'chromium',
-    args: [`--disable-extensions-except=${EXT}`, `--load-extension=${EXT}`],
+    args: [`--disable-extensions-except=${EXT}`, `--load-extension=${EXT}`, '--enable-unsafe-webgpu', '--use-angle=metal'],
   });
 
   // The MV3 service worker starts on demand; give it a moment to register.
@@ -79,8 +79,8 @@ const CASES = [
 
   /* A service worker's sendMessage does not reach its own listener, so the test
    * calls the worker's scorePassages() directly. That still exercises the part
-   * that can actually break: creating the offscreen document, loading 63 MB of
-   * ONNX under WASM, tokenizing, and running inference. Only the SW's own
+   * that can actually break: creating the offscreen document, loading the model
+   * under WebGPU or WASM, tokenizing, and running inference. Only the SW's own
    * onMessage routing is bypassed. */
   const t0 = Date.now();
   const warm = await worker.evaluate(async () =>
@@ -88,7 +88,9 @@ const CASES = [
   );
   const coldMs = Date.now() - t0;
   check('model loads and returns a score', warm && warm.ok && typeof warm.scores[0] === 'number', warm);
-  console.log('       cold start (offscreen + 63MB model + first inference): ' + coldMs + 'ms');
+  const backend = await worker.evaluate(async () => chrome.runtime.sendMessage({ target: 'og-offscreen', type: 'og:warm' }));
+  check('model runs on WebGPU', backend && backend.backend === 'webgpu', backend);
+  console.log('       cold start (offscreen + model + first inference): ' + coldMs + 'ms on ' + (backend && backend.backend));
 
   console.log('\nranking passages that share no words with the query');
   let correct = 0;
@@ -112,7 +114,7 @@ const CASES = [
       scores: res.scores.map((s) => Number(s.toFixed(1))),
     });
   }
-  console.log('       ' + correct + '/' + CASES.length + ' correct, ' + Math.round(totalMs / CASES.length) + 'ms per query warm (WASM)');
+  console.log('       ' + correct + '/' + CASES.length + ' correct, ' + Math.round(totalMs / CASES.length) + 'ms per query warm');
 
   console.log('\nscores must not depend on what else is in the batch');
   {

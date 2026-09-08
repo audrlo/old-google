@@ -247,28 +247,14 @@ const HIGHLIGHT_TTL_MS = 30 * 1000;
 const HIGHLIGHT_CSS = '::target-text { background-color: #e5d4f6 !important; color: #202124 !important; }';
 const pendingHighlights = new Map(); // origin + pathname -> expiry
 
-function highlightKey(raw) {
-  try {
-    const u = new URL(raw);
-    return u.origin + u.pathname;
-  } catch (_) {
-    return null;
-  }
-}
-
-function rememberHighlight(url) {
-  const key = highlightKey(url);
-  if (key) pendingHighlights.set(key, Date.now() + HIGHLIGHT_TTL_MS);
-}
+const highlightKey = (url) => new URL(url).origin + new URL(url).pathname;
 
 chrome.tabs.onUpdated.addListener((tabId, info, tab) => {
-  if (!pendingHighlights.size || info.status !== 'complete') return;
-  const key = highlightKey(tab && tab.url);
-  const until = key && pendingHighlights.get(key);
+  if (info.status !== 'complete') return;
+  const until = pendingHighlights.get(highlightKey(tab.url));
   if (!until) return;
-  pendingHighlights.delete(key);
-  if (until < Date.now()) return;
-  chrome.scripting.insertCSS({ target: { tabId }, css: HIGHLIGHT_CSS }).catch(() => {});
+  pendingHighlights.delete(highlightKey(tab.url));
+  if (until > Date.now()) chrome.scripting.insertCSS({ target: { tabId }, css: HIGHLIGHT_CSS });
 });
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
@@ -276,7 +262,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg && msg.target === 'og-offscreen') return false;
 
   if (msg && msg.type === 'og:highlight') {
-    rememberHighlight(msg.url);
+    pendingHighlights.set(highlightKey(msg.url), Date.now() + HIGHLIGHT_TTL_MS);
     return false;
   }
 
