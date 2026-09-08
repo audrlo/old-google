@@ -152,7 +152,8 @@ async function fetchJson(rawUrl) {
   const cached = await readCache(url.href);
   if (cached) return { ...cached, cached: true };
 
-  await politeDelay(url.host);
+  // No politeDelay here: these are APIs built for concurrent calls, and the
+  // dictionary card asks Datamuse three things at once.
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
   try {
@@ -233,9 +234,51 @@ async function scorePassages(query, passages) {
   return res;
 }
 
+/* ------------------------------------------------------------------------
+ * Highlighting the quoted passage on the source page.
+ *
+ * A snippet link's href carries a text fragment, so the browser itself scrolls
+ * to the passage and marks it. The mark is the browser's default colour; 2020
+ * Google's was a pale purple, so once the page has loaded ::target-text is
+ * restyled there. The click is remembered for half a minute and matched by
+ * origin + path, so it works whether the link opened in this tab or a new one.
+ * ---------------------------------------------------------------------- */
+const HIGHLIGHT_TTL_MS = 30 * 1000;
+const HIGHLIGHT_CSS = '::target-text { background-color: #e5d4f6 !important; color: #202124 !important; }';
+const pendingHighlights = new Map(); // origin + pathname -> expiry
+
+function highlightKey(raw) {
+  try {
+    const u = new URL(raw);
+    return u.origin + u.pathname;
+  } catch (_) {
+    return null;
+  }
+}
+
+function rememberHighlight(url) {
+  const key = highlightKey(url);
+  if (key) pendingHighlights.set(key, Date.now() + HIGHLIGHT_TTL_MS);
+}
+
+chrome.tabs.onUpdated.addListener((tabId, info, tab) => {
+  if (!pendingHighlights.size || info.status !== 'complete') return;
+  const key = highlightKey(tab && tab.url);
+  const until = key && pendingHighlights.get(key);
+  if (!until) return;
+  pendingHighlights.delete(key);
+  if (until < Date.now()) return;
+  chrome.scripting.insertCSS({ target: { tabId }, css: HIGHLIGHT_CSS }).catch(() => {});
+});
+
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   // Messages addressed to the offscreen document are not ours to handle.
   if (msg && msg.target === 'og-offscreen') return false;
+
+  if (msg && msg.type === 'og:highlight') {
+    rememberHighlight(msg.url);
+    return false;
+  }
 
   if (msg && msg.type === 'og:score') {
     scorePassages(msg.query, msg.passages).then(sendResponse, (err) =>

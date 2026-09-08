@@ -5,6 +5,7 @@
   "description": "Brings back the 2020 Google Search look, removes the AI Overview, and restores classic single-source featured snippets \u2014 with today's results.",
   "permissions": [
     "offscreen",
+    "scripting",
     "storage"
   ],
   "host_permissions": [
@@ -93,7 +94,8 @@
       "css": [
         "src/content/hide-ai.css",
         "src/content/theme-2020.css",
-        "src/content/snippet.css"
+        "src/content/snippet.css",
+        "src/content/dictionary.css"
       ],
       "js": [
         "src/content/00-state.js",

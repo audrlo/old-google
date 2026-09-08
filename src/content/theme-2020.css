@@ -44,6 +44,17 @@ html.og-2020 {
   --og-rule-soft: #f1f3f4;
   --og-footer-bg: #f2f2f2;
   --og-footer-border: #e4e4e4;
+  /* the dictionary card: Google's blue, its green/red "Similar"/"Opposite" labels, and the chips */
+  --og-accent: #1a73e8;
+  --og-heading: #000;
+  --og-example: #878787;
+  --og-similar: #188038;
+  --og-opposite: #d93025;
+  --og-chip-bg: #fff;
+  --og-chip-text: #3c4043;
+  --og-chip-border: #dadce0;
+  --og-chip-hover: #f8f9fa;
+  --og-chip-active: #f1f3f4;
 }
 
 html.og-2020.og-dark {
@@ -64,6 +75,16 @@ html.og-2020.og-dark {
   --og-rule-soft: #2a2b2d;
   --og-footer-bg: #171717;
   --og-footer-border: #3c4043;
+  --og-accent: #8ab4f8;
+  --og-heading: #e8eaed;
+  --og-example: #9aa0a6;
+  --og-similar: #81c995;
+  --og-opposite: #f28b82;
+  --og-chip-bg: transparent;
+  --og-chip-text: #bdc1c6;
+  --og-chip-border: #3c4043;
+  --og-chip-hover: #303134;
+  --og-chip-active: #3c4043;
 }
 
 /* ---------------------------------------------------------------- reset -- */

@@ -2,10 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Old Google — dictionary panel fixture</title>
+<title>Old Google — dictionary card fixture</title>
 <link rel="stylesheet" href="../src/content/hide-ai.css">
 <link rel="stylesheet" href="../src/content/theme-2020.css">
 <link rel="stylesheet" href="../src/content/snippet.css">
+<link rel="stylesheet" href="../src/content/dictionary.css">
 <style>
   body { margin:0; }
   .hdr { padding:20px 0 0 180px; }
@@ -20,7 +21,7 @@
 <div id="gsr">
   <form role="search" id="searchform"><div class="hdr" id="headerwrap">
     <span class="lg" id="logo"><span style="color:#4285f4">G</span><span style="color:#ea4335">o</span><span style="color:#fbbc05">o</span><span style="color:#4285f4">g</span><span style="color:#34a853">l</span><span style="color:#ea4335">e</span></span>
-    <span id="megapill"><span><input name="q" value="gazelle definition"></span></span>
+    <span id="megapill"><span><input name="q" value="happy definition"></span></span>
   </div></form>
   <div id="tabrow"><div id="hdtb-msb" role="navigation">
     <div><a href="/search?q=x" aria-current="page">All</a></div><div><a href="/search?q=x&udm=2">Images</a></div>
@@ -28,40 +29,59 @@
   <div id="cnt"><div id="rcnt"><div id="center_col">
     <div id="result-stats">About 8,120,000 results (0.41 seconds)</div>
     <div id="search"><div id="rso">
+      <!-- Google's own dictionary box, which the card replaces -->
+      <div class="MjjYud" id="google-dict-box"><div data-attrid="DictionaryHeader"><span>happy</span></div><div>Google's definition box</div></div>
       <div class="MjjYud" data-hveid="r1">
-        <div class="yuRUbf"><a href="https://www.merriam-webster.com/dictionary/gazelle">
+        <div class="yuRUbf"><a href="https://www.merriam-webster.com/dictionary/happy">
           <div class="byrV5b"><span class="favplate"><img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" width="16" height="16" alt=""></span>
-            <div><span class="VuuXrf">Merriam-Webster</span><div><cite>https://www.merriam-webster.com › dictionary › gazelle</cite></div></div>
-          </div><h3>GAZELLE Definition &amp; Meaning</h3></a></div>
-        <div class="VwiC3b">The meaning of GAZELLE is any of numerous small swift graceful antelopes.</div>
+            <div><span class="VuuXrf">Merriam-Webster</span><div><cite>https://www.merriam-webster.com › dictionary › happy</cite></div></div>
+          </div><h3>HAPPY Definition &amp; Meaning</h3></a></div>
+        <div class="VwiC3b">The meaning of HAPPY is favored by luck or fortune : fortunate.</div>
       </div>
     </div></div>
     <div id="botstuff"></div>
   </div><div id="rhs"><div></div></div></div></div>
 </div>
 <script>
-const API = [{
-  word: 'gazelle',
-  phonetic: '/ɡəˈzɛl/',
-  phonetics: [{ text: '/ɡəˈzɛl/' }],
-  meanings: [
-    { partOfSpeech: 'noun',
-      definitions: [
-        { definition: 'Any of numerous antelopes of the genus Gazella, noted for their grace and speed.', example: 'a herd of gazelles grazed on the plain', synonyms: ['antelope'] },
-        { definition: 'A light yellowish-brown colour, like that of a gazelle.', example: '', synonyms: [] },
-      ],
-      synonyms: ['antelope', 'springbok', 'impala'], antonyms: [] },
-    { partOfSpeech: 'verb',
-      definitions: [{ definition: 'To move with the light, bounding grace of a gazelle.', example: 'she gazelled across the field', synonyms: [] }],
-      synonyms: [], antonyms: [] },
-  ],
-  sourceUrls: ['https://en.wiktionary.org/wiki/gazelle'],
-}];
+/* ?q=<query>         which query the page is for (default "happy definition")
+   ?dark=1            Google's own dark SERP, which the card must follow
+   ?fail=wiktionary   Wiktionary is down; the card falls back to Datamuse */
+const PARAMS = new URLSearchParams(location.search);
+const QUERY = PARAMS.get('q') || 'happy definition';
+document.querySelector('input[name=q]').value = QUERY;
+if (PARAMS.get('dark') === '1') {
+  const st = document.createElement('style');
+  st.textContent = `
+    body { background:#202124; color:#e8eaed; }
+    #megapill { background:#303134; border-color:#5f6368; }
+    .hdr input { background:transparent; color:#e8eaed; }
+    #hdtb-msb a { color:#bdc1c6; }
+  `;
+  document.head.appendChild(st);
+}
+
+// Real responses, trimmed: Wiktionary's REST definitions and Datamuse's
+// synonyms, antonyms and metadata (the pronunciation and fallback definitions).
+const DATA = {
+  happy: { wiktionary: {"en": [{"partOfSpeech": "Adjective", "language": "English", "definitions": [{"definition": "Having a <a rel=\"mw:WikiLink\" href=\"/wiki/feeling\" title=\"feeling\">feeling</a> <a rel=\"mw:WikiLink\" href=\"/wiki/arise\" title=\"arise\">arising</a> from a <a rel=\"mw:WikiLink\" href=\"/wiki/consciousness\" title=\"consciousness\">consciousness</a> of <a rel=\"mw:WikiLink\" href=\"/wiki/well-being\" title=\"well-being\">well-being</a> or of <a rel=\"mw:WikiLink\" href=\"/wiki/enjoyment\" title=\"enjoyment\">enjoyment</a>; <a rel=\"mw:WikiLink\" href=\"/wiki/enjoy\" title=\"enjoy\">enjoying</a> <a rel=\"mw:WikiLink\" href=\"/wiki/good\" title=\"good\">good</a> of any kind, such as <a rel=\"mw:WikiLink\" href=\"/wiki/comfort\" title=\"comfort\">comfort</a>, <a rel=\"mw:WikiLink\" href=\"/wiki/peace\" title=\"peace\">peace</a>, or <a rel=\"mw:WikiLink\" href=\"/wiki/tranquillity\" title=\"tranquillity\">tranquillity</a>; <a rel=\"mw:WikiLink\" href=\"/wiki/blissful\" title=\"blissful\">blissful</a>, <a rel=\"mw:WikiLink\" href=\"/wiki/contented\" title=\"contented\">contented</a>, <a rel=\"mw:WikiLink\" href=\"/wiki/joyous\" title=\"joyous\">joyous</a>.", "examples": ["Music makes me feel <b>happy</b>."]}, {"definition": "<span class=\"usage-label-sense\" about=\"#mwt43\" typeof=\"mw:Transclusion\"></span> <a rel=\"mw:WikiLink\" href=\"/wiki/experience#Verb\" title=\"experience\">Experiencing</a> the effect of <a rel=\"mw:WikiLink\" href=\"/wiki/favourable\" title=\"favourable\">favourable</a> <a rel=\"mw:WikiLink\" href=\"/wiki/fortune\" title=\"fortune\">fortune</a>; <a rel=\"mw:WikiLink\" href=\"/wiki/favor#Verb\" title=\"favor\">favored</a> by fortune or <a rel=\"mw:WikiLink\" href=\"/wiki/luck\" title=\"luck\">luck</a>; <a rel=\"mw:WikiLink\" href=\"/wiki/fortunate\" title=\"fortunate\">fortunate</a>, <a rel=\"mw:WikiLink\" href=\"/wiki/lucky\" title=\"lucky\">lucky</a>."}, {"definition": "<span class=\"usage-label-sense\" about=\"#mwt48\" typeof=\"mw:Transclusion\"></span> <a rel=\"mw:WikiLink\" href=\"/wiki/elect\" title=\"elect\">Elect</a> or <a rel=\"mw:WikiLink\" href=\"/wiki/saved\" title=\"saved\">saved</a> after <a rel=\"mw:WikiLink\" href=\"/wiki/death\" title=\"death\">death</a>, <a rel=\"mw:WikiLink\" href=\"/wiki/blessed\" title=\"blessed\">blessed</a>."}, {"definition": "<a rel=\"mw:WikiLink\" href=\"/wiki/content#Adjective\" title=\"content\">Content</a>, <a rel=\"mw:WikiLink\" href=\"/wiki/willing\" title=\"willing\">willing</a>, <a rel=\"mw:WikiLink\" href=\"/wiki/satisfied\" title=\"satisfied\">satisfied</a> (with or to do something); having no <a rel=\"mw:WikiLink\" href=\"/wiki/objection\" title=\"objection\">objection</a> (to something).", "examples": ["Are you <b>happy</b> to pay me back by the end of the week<span typeof=\"mw:Entity\">?</span>"]}]}, {"partOfSpeech": "Noun", "language": "English", "definitions": [{"definition": "<span class=\"usage-label-sense\" about=\"#mwt560\" typeof=\"mw:Transclusion\"></span> A happy <a rel=\"mw:WikiLink\" href=\"/wiki/event\" title=\"event\">event</a>, <a rel=\"mw:WikiLink\" href=\"/wiki/thing\" title=\"thing\">thing</a>, <a rel=\"mw:WikiLink\" href=\"/wiki/person\" title=\"person\">person</a>, etc."}]}, {"partOfSpeech": "Verb", "language": "English", "definitions": [{"definition": "<span class=\"usage-label-sense\" about=\"#mwt563\" typeof=\"mw:Transclusion\"></span> <i>Often followed by</i> <b><span class=\"Latn\" lang=\"en\" about=\"#mwt564\" typeof=\"mw:Transclusion\"><a rel=\"mw:WikiLink\" href=\"/wiki/up#English\" title=\"up\">up</a></span></b>: to <a rel=\"mw:WikiLink\" href=\"/wiki/become\" title=\"become\">become</a> happy; to <a rel=\"mw:WikiLink\" href=\"/wiki/brighten_up\" title=\"brighten up\">brighten up</a>, to <a rel=\"mw:WikiLink\" href=\"/wiki/cheer_up\" title=\"cheer up\">cheer up</a>."}, {"definition": "<span class=\"usage-label-sense\" about=\"#mwt568\" typeof=\"mw:Transclusion\"></span> <i>Often followed by</i> <b><span class=\"Latn\" lang=\"en\" about=\"#mwt569\" typeof=\"mw:Transclusion\"><a rel=\"mw:WikiLink\" href=\"/wiki/up#English\" title=\"up\">up</a></span></b>: to <a rel=\"mw:WikiLink\" href=\"/wiki/make\" title=\"make\">make</a> happy; to <a rel=\"mw:WikiLink\" href=\"/wiki/brighten\" title=\"brighten\">brighten</a>, to <a rel=\"mw:WikiLink\" href=\"/wiki/cheer#Verb\" title=\"cheer\">cheer</a>, to <a rel=\"mw:WikiLink\" href=\"/wiki/enliven\" title=\"enliven\">enliven</a>."}]}]}, similar: [{"word": "halcyon", "score": 100}, {"word": "content", "score": 99}, {"word": "bright", "score": 98}, {"word": "felicitous", "score": 97}, {"word": "riant", "score": 96}, {"word": "expansive", "score": 95}, {"word": "elysian", "score": 94}, {"word": "joyful", "score": 93}, {"word": "pleased", "score": 92}, {"word": "euphoric", "score": 91}, {"word": "joyous", "score": 90}, {"word": "prosperous", "score": 89}, {"word": "blissful", "score": 88}, {"word": "blessed", "score": 87}, {"word": "golden", "score": 86}, {"word": "glad", "score": 85}, {"word": "fortunate", "score": 84}, {"word": "euphoriant", "score": 83}, {"word": "paradisal", "score": 82}, {"word": "paradisiac", "score": 81}, {"word": "contented", "score": 80}, {"word": "paradisaical", "score": 79}, {"word": "paradisial", "score": 78}, {"word": "paradisiacal", "score": 77}, {"word": "well-chosen", "score": 76}, {"word": "paradisaic", "score": 75}], opposite: [{"word": "sad", "score": 32055}, {"word": "distressed", "score": 29032}, {"word": "unhappy", "score": 12036}, {"word": "dysphoric", "score": 5018}], meta: [{"word": "happy", "score": 165077, "tags": ["adj", "v", "n", "pron:HH AE1 P IY0 "], "defs": ["adj\tHaving a feeling arising from a consciousness of well-being or of enjoyment; enjoying good of any kind, such as comfort, peace, or tranquillity; blissful, contented, joyous. ", "adj\t(of people) Experiencing the effect of favourable fortune; favored by fortune or luck; fortunate, lucky. ", "v\t(intransitive, informal) Often followed by up: to become happy; to brighten up, to cheer up. ", "n\t(informal, rare) A happy event, thing, person, etc. "]}] },
+  marvelous: { wiktionary: {"en":[{"partOfSpeech":"Adjective","language":"English","definitions":[{"definition":"<span class=\"usage-label-sense\" about=\"#mwt14\" typeof=\"mw:Transclusion\"></span> Exciting wonder or surprise; astonishing; wonderful.","parsedExamples":[{"example":"I went to a <b>marvelous</b> party last week."}],"examples":["I went to a <b>marvelous</b> party last week."]}]}]}, similar: [{"word": "extraordinary", "score": 100}, {"word": "tremendous", "score": 99}, {"word": "wondrous", "score": 98}, {"word": "incredible", "score": 97}, {"word": "fantastic", "score": 96}, {"word": "supernatural", "score": 95}, {"word": "wonderful", "score": 94}, {"word": "rattling", "score": 93}, {"word": "terrific", "score": 92}, {"word": "improbable", "score": 91}, {"word": "howling", "score": 90}, {"word": "unbelievable", "score": 89}, {"word": "miraculous", "score": 88}, {"word": "marvellous", "score": 87}, {"word": "tall", "score": 86}], opposite: [], meta: [{"word": "marvelous", "score": 321100, "tags": ["adj", "pron:M AA1 R V AH0 L AH0 S "], "defs": ["adj\t(American spelling) Exciting wonder or surprise; astonishing; wonderful. "]}] },
+};
+
 window.chrome = {
   storage: { sync:{get:async()=>({}),set:async()=>{}}, local:{get:async()=>({}),set:async()=>{}}, onChanged:{addListener(){}} },
   runtime: { lastError:null, sendMessage(m,cb){
-    if (m.type === 'og:fetchJson') return void setTimeout(()=>cb({ok:true,data:API}), 60);
-    setTimeout(()=>cb({ok:false,error:'offline'}), 30);
+    if (m.type !== 'og:fetchJson') return void setTimeout(()=>cb({ok:false,error:'offline'}), 30);
+    const u = m.url;
+    const d = DATA[decodeURIComponent(u.match(/(?:definition\/|sp=|rel_syn=|rel_ant=)([^&]+)/)[1])];
+    if (!d) return void setTimeout(()=>cb({ok:false,error:'not-found'}), 30);
+    if (u.includes('wiktionary')) {
+      if (PARAMS.get('fail') === 'wiktionary') return void setTimeout(()=>cb({ok:false,error:'http-522'}), 60);
+      return void setTimeout(()=>cb({ok:true,data:d.wiktionary}), 60);
+    }
+    if (u.includes('md=dpr')) return void setTimeout(()=>cb({ok:true,data:d.meta}), 30);
+    // The chips arrive after the card is up.
+    if (u.includes('rel_syn')) return void setTimeout(()=>cb({ok:true,data:d.similar}), 140);
+    setTimeout(()=>cb({ok:true,data:d.opposite}), 160);
   } },
 };
 </script>
@@ -75,9 +95,9 @@ window.chrome = {
 const OG = window.OG;
 OG.settings.debug = true;
 OG.isSearchPage = () => true; OG.isResultsPage = () => true;
-OG.query = () => 'gazelle definition'; OG.startIndex = () => 0;
+OG.query = () => QUERY; OG.startIndex = () => 0;
 OG.applyClasses(); OG.purgeAI(); OG.theme(); OG.ensureDictionary(); OG.ensureSnippet(); OG.buildPagination();
-setTimeout(() => { OG.ensureSnippet(); window.__ready = true; }, 300);
+setTimeout(() => { OG.ensureDictionary(); OG.ensureSnippet(); window.__ready = true; }, 400);
 </script>
 </body>
 </html>
