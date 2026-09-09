@@ -16,6 +16,7 @@ const path = require('path');
     aiModeTabVisible: !!Array.from(document.querySelectorAll('#hdtb-msb a')).find(
       (a) => a.textContent.trim() === 'AI Mode' && a.checkVisibility()
     ),
+    adsVisible: !!document.getElementById('tads')?.checkVisibility?.(),
     featured: !!document.getElementById('og-featured'),
     featuredKind: document.querySelector('.og-fs-list') ? 'list' : document.querySelector('.og-fs-table') ? 'table' : 'paragraph',
     featuredText: document.querySelector('.og-fs-answer')?.textContent.slice(0, 90),

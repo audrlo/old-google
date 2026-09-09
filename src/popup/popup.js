@@ -1,6 +1,7 @@
 const DEFAULTS = {
   theme: true,
   hideAI: true,
+  hideAds: true,
   followDark: true,
   pagination: true,
   hideFooter: true,
@@ -17,7 +18,7 @@ const DEFAULTS = {
   debug: false,
 };
 
-const CHECKBOXES = ['theme', 'hideAI', 'followDark', 'pagination', 'hideFooter', 'greenUrls', 'debug', 'preferWikipedia', 'dictionary', 'rerank', 'oxfordSandbox'];
+const CHECKBOXES = ['theme', 'hideAI', 'hideAds', 'followDark', 'pagination', 'hideFooter', 'greenUrls', 'debug', 'preferWikipedia', 'dictionary', 'rerank', 'oxfordSandbox'];
 const TEXTAREAS = ['extraHideSelectors', 'customCss', 'oxfordAppId', 'oxfordAppKey'];
 
 function area() {

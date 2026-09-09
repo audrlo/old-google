@@ -5,6 +5,7 @@
   OG.DEFAULTS = {
     theme: true,               // 2020 skin
     hideAI: true,              // remove AI Overview / AI Mode
+    hideAds: true,             // remove sponsored results
     followDark: true,          // match Google's theme instead of forcing white
     pagination: true,          // classic Gooooooogle numbered pages
     hideFooter: true,          // drop the "Results are not personalized" bar
@@ -135,6 +136,7 @@
     const on = OG.isSearchPage();
     root.classList.toggle('og-2020', on && s.theme);
     root.classList.toggle('og-hide-ai', on && s.hideAI);
+    root.classList.toggle('og-hide-ads', on && s.hideAds);
     // Before the DOM exists we can only guess from the OS preference;
     // OG.detectTheme() corrects this by measuring Google's own header.
     const prefersDark = !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);

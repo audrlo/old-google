@@ -152,6 +152,7 @@ The fetched HTML is parsed with an inert `DOMParser` — no scripts run, no subr
 | Setting | Default | What it does |
 | --- | --- | --- |
 | Remove AI Overview & AI Mode | on | Hides the generated summary, the AI Mode tab, the search-box AI button, Labs promos |
+| Remove sponsored results | on | Hides the ad blocks above and below the results and the shopping carousels |
 | 2020 look | on | The skin |
 | Follow dark mode | on | Match Google's theme. Off forces the light palette |
 | Green URLs | off | Goes further back — the pre-2016 `#006621` |

@@ -67,3 +67,21 @@ html.og-hide-ai #center_col > div:empty {
   height: 0 !important;
   margin: 0 !important;
 }
+
+/* ==========================================================================
+   Sponsored results. Gated on html.og-hide-ads.
+   #tads / #tadsb / #bottomads are the text-ad blocks above and below the
+   results, the commercial units are the shopping carousels, and
+   data-text-ad marks each ad inside them.
+   ========================================================================== */
+html.og-hide-ads #tads,
+html.og-hide-ads #tadsb,
+html.og-hide-ads #bottomads,
+html.og-hide-ads #taw,
+html.og-hide-ads [data-text-ad],
+html.og-hide-ads [aria-label="Ads"],
+html.og-hide-ads .commercial-unit-desktop-top,
+html.og-hide-ads .commercial-unit-desktop-rhs,
+html.og-hide-ads .pla-unit-container {
+  display: none !important;
+}
