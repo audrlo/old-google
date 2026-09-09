@@ -1,32 +1,33 @@
 /* ==========================================================================
-   Old Google (2020) — the dictionary / thesaurus card.
+   Old Google — the dictionary / thesaurus block.
 
-   Metrics from google.com, Nov 2020 – Jan 2021. Two variants share the card:
+   Metrics from google.com's last pre-AI-Overviews design, Nov 2023 – Apr 2024
+   (the inline CSS of "define X" captures). Two variants share the block:
 
-     define    "Dictionary" heading, a word search row, the headword beside a
-               round speaker button with its pronunciation underneath, italic
-               parts of speech with numbered senses and grey quoted examples,
-               then one-row "Similar:" / "Opposite:" chip rows.
-     synonym   "Similar and opposite words", the word, one short definition,
-               then bigger full-width chip lists clamped to two rows.
+     define    "Dictionary" heading over an attribution line, the headword
+               beside a filled blue speaker button with its pronunciation
+               underneath, italic parts of speech with senses (numbered only
+               when there are several) and grey quoted examples, then one-row
+               "Similar:" / "Opposite:" chip rows.
+     synonym   No capture of this era exists, so it keeps its 2020 structure —
+               "Similar and opposite words", the word, one short definition,
+               bigger chip lists clamped to two rows — in the same components.
 
-   A clamped list hides its overflow with max-height; 25-dictionary.js drops a
-   caret pill where the last visible chip fits, and .og-dict-open lifts the
-   clamp. Every colour is a palette variable from theme-2020.css so the card
-   follows Google's dark theme.
+   Neither is a card: no border, no fill, just the column's 16px text inset.
+   A clamped chip list hides its overflow with max-height; 25-dictionary.js
+   drops a caret pill where the last visible chip fits, and .og-dict-open lifts
+   the clamp. The footer is a rule with a grey pill sitting on it. Every colour
+   is a palette variable from theme-2020.css so the block follows Google's dark
+   theme without ever painting a white box.
    ========================================================================== */
 
 .og-dict {
   max-width: 652px;
-  margin: 0 0 45px 0;
-  padding: 0 16px 16px 16px;
-  border: 1px solid var(--og-border) !important;
-  border-radius: 8px !important;
-  background: var(--og-card-bg) !important;
+  margin: 0 0 30px 0;
+  padding: 0 16px;
   font-family: arial, sans-serif;
   font-size: 14px;
-  line-height: 1.58;
-  color: var(--og-text);
+  color: var(--og-dict-text);
   box-sizing: border-box;
 }
 .og-dict svg {
@@ -35,114 +36,111 @@
   display: block;
 }
 
-/* --- define: heading, search row, headword ------------------------------ */
+/* --- heading and attribution ------------------------------------------- */
 
 .og-dict-define .og-dict-heading {
-  font-size: 20px;
-  line-height: 1.3;
-  color: var(--og-heading);
-  padding: 24px 0 16px 0;
+  font-family: 'Google Sans', arial, sans-serif;
+  font-size: 22px;
+  line-height: 28px;
+  color: var(--og-text);
+  padding-bottom: 16px;
+}
+.og-dict-synonym .og-dict-heading {
+  color: var(--og-dict-secondary);
+}
+.og-dict-credit {
+  padding: 4px 0 16px 0;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--og-dict-credit);
+}
+.og-dict-credit a {
+  color: var(--og-text);
+  text-decoration: underline;
 }
 
-.og-dict-search {
-  display: flex;
-  margin: 0 0 20px 0;
-}
-.og-dict-search input {
-  flex: 1 1 auto;
-  min-width: 0;
-  height: 38px;
-  box-sizing: border-box;
-  border: 1px solid var(--og-chip-border);
-  border-radius: 2px 0 0 2px;
-  padding: 0 8px;
-  font: 16px arial, sans-serif;
-  color: var(--og-text);
-  background: var(--og-card-bg);
-  outline: none;
-}
-.og-dict-search button {
-  flex: none;
-  width: 39px;
-  height: 38px;
-  box-sizing: border-box;
-  border: 1px solid var(--og-chip-border);
-  border-left: 0;
-  border-radius: 0 2px 2px 0;
-  background: var(--og-chip-hover);
-  padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-}
-.og-dict-search svg {
-  fill: var(--og-muted-strong);
-}
+/* --- headword ----------------------------------------------------------- */
 
 .og-dict-head {
   display: flex;
-  align-items: center;
 }
+/* A 36px hit area around a 34px filled circle. */
 .og-dict-speak {
   flex: none;
-  width: 34px;
-  height: 34px;
-  box-sizing: border-box;
+  width: 36px;
+  height: 36px;
   margin: 0 12px 0 0;
   padding: 0;
-  border: 1px solid var(--og-chip-border);
-  border-radius: 50%;
+  border: 0;
   background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
 }
-.og-dict-speak:hover {
-  background: var(--og-chip-hover);
+.og-dict-speak span {
+  width: 34px;
+  height: 34px;
+  box-sizing: border-box;
+  border: 1px solid var(--og-speaker);
+  border-radius: 50%;
+  background: var(--og-speaker);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.og-dict-speak:hover span {
+  background: var(--og-speaker-hover);
 }
 .og-dict-speak svg {
-  fill: var(--og-accent);
+  width: 22px;
+  height: 22px;
+  fill: #fff;
 }
 
 .og-dict-word {
   font-family: 'Google Sans', arial, sans-serif;
   font-size: 28px;
   line-height: 36px;
-  color: var(--og-text);
+  min-height: 36px;
 }
 .og-dict-pron {
-  font-size: 14px;
-  line-height: 16px;
-  min-height: 16px;
-  color: var(--og-muted);
+  line-height: 22px;
+  color: var(--og-text);
 }
 
 /* --- senses ------------------------------------------------------------- */
 
 .og-dict-pos {
+  margin-top: 10px;
+  min-height: 20px;
   font-style: italic;
-  font-size: 14px;
-  padding-top: 10px;
-  color: var(--og-text);
+  line-height: 22px;
+  color: var(--og-dict-secondary);
 }
 .og-dict-senses {
   margin: 0;
   padding: 0 0 0 20px;
-  list-style: decimal; /* Google's page CSS resets lists */
 }
+/* Google's page CSS sets list-style: none on every li, so this has to win. */
 .og-dict-senses li {
-  padding-top: 10px;
+  padding-top: 8px;
+  list-style: decimal !important;
+}
+.og-dict-senses.og-dict-single li {
+  list-style: none !important; /* a lone sense went unnumbered */
 }
 .og-dict-def {
-  color: var(--og-text);
+  line-height: 16px;
+}
+.og-dict-synonym .og-dict-def {
+  padding-top: 10px;
 }
 .og-dict-example {
-  color: var(--og-example);
+  color: var(--og-dict-secondary);
 }
 
-/* Senses and parts of speech past the first two wait behind the footer link. */
+/* Senses and parts of speech past the first two wait behind the pill. */
 .og-dict-extra {
   display: none;
 }
@@ -155,16 +153,12 @@
 
 /* --- chips -------------------------------------------------------------- */
 
-.og-dict-row {
-  margin-top: 16px;
-}
-.og-dict-define .og-dict-opposite {
-  margin-top: 8px;
-}
 .og-dict-chips {
   position: relative;
   overflow: hidden;
   max-height: 30px;
+  padding-right: 24px; /* room for the caret */
+  transition: max-height 0.3s;
 }
 /* A list keeps its collapsed height reserved until its chips arrive. */
 .og-dict-chips:not(.og-dict-filled) {
@@ -173,9 +167,9 @@
 .og-dict-label {
   display: inline-block;
   vertical-align: top;
-  margin: 6px 4px 0 0;
+  margin: 9px 8px 0 0;
+  height: 24px;
   line-height: 24px;
-  font-size: 13px;
   color: var(--og-similar);
 }
 .og-dict-opposite .og-dict-label {
@@ -194,7 +188,7 @@
   border: 1px solid var(--og-chip-border);
   border-radius: 32px;
   background: var(--og-chip-bg);
-  color: var(--og-chip-text);
+  color: var(--og-text);
   font-size: 13px;
   text-decoration: none;
   white-space: nowrap;
@@ -206,6 +200,7 @@
 }
 .og-dict-chip:active {
   background: var(--og-chip-active);
+  border-color: var(--og-chip-active-border);
 }
 .og-dict-caret {
   width: 22px;
@@ -215,29 +210,19 @@
   justify-content: center;
 }
 .og-dict-caret svg {
-  width: 18px;
-  height: 18px;
-  fill: var(--og-muted);
+  fill: var(--og-dict-secondary);
 }
 
-/* --- synonym variant ---------------------------------------------------- */
+/* --- synonym variant: block labels, bigger chips, two rows -------------- */
 
-.og-dict-synonym .og-dict-heading {
-  font-size: 14px;
-  color: var(--og-muted);
-  padding-top: 20px;
-}
-.og-dict-synonym .og-dict-def {
-  padding-top: 10px;
-}
 .og-dict-synonym .og-dict-row {
   margin-top: 20px;
 }
 .og-dict-synonym .og-dict-label {
   display: block;
   margin: 0;
+  height: 20px;
   line-height: 20px;
-  font-size: 14px;
 }
 .og-dict-synonym .og-dict-chips {
   max-height: 68px;
@@ -245,8 +230,10 @@
 .og-dict-synonym .og-dict-chips:not(.og-dict-filled) {
   min-height: 68px;
 }
+/* 26px including the border, so two rows make the 68px clamp exactly. */
 .og-dict-synonym .og-dict-chip {
-  height: 24px;
+  box-sizing: border-box;
+  height: 26px;
   line-height: 24px;
   margin-top: 8px;
   font-size: 14px;
@@ -255,11 +242,12 @@
   width: 24px;
 }
 
-/* The caret pill opens its own list; the footer link opens everything. Kept
-   below both variants so it outranks their clamps. */
+/* The caret pill opens its own list; the footer pill opens everything. Kept
+   below both variants so it outranks their clamps. 400px is room for the 30
+   chips a list can hold; max-height: none would not animate. */
 .og-dict-chips.og-dict-open,
 .og-dict-expanded .og-dict-chips {
-  max-height: none;
+  max-height: 400px;
 }
 .og-dict-open .og-dict-caret svg,
 .og-dict-expanded .og-dict-caret svg,
@@ -267,51 +255,58 @@
   transform: rotate(180deg);
 }
 
-/* --- footer ------------------------------------------------------------- */
+/* --- footer: a rule with the pill sitting on it, then Feedback ---------- */
 
 .og-dict-foot {
   margin-top: 16px;
+  text-align: right;
 }
 .og-dict-rule {
-  border-top: 1px solid var(--og-border);
+  position: relative;
   margin: 0 -16px;
+  display: flex;
+  justify-content: center;
 }
-.og-dict-synonym .og-dict-rule {
-  margin: 0;
+.og-dict-rule::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  border-top: 1px solid var(--og-dict-rule);
 }
 .og-dict-more {
+  position: relative;
+  width: 300px;
+  height: 36px;
+  border-radius: 18px;
+  background: var(--og-pill);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 12px 0;
-  font-size: 13px;
-  color: var(--og-text);
+  color: var(--og-dict-text);
   text-decoration: none;
 }
-.og-dict-more svg {
-  width: 18px;
-  height: 18px;
-  margin-left: 4px;
-  fill: var(--og-muted);
+.og-dict-more:hover {
+  background: var(--og-pill-hover);
 }
-.og-dict-credit {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  padding-top: 4px;
-  font-size: 13px;
-  color: var(--og-muted);
+.og-dict-more svg {
+  margin-left: 4px;
+  fill: var(--og-dict-text);
 }
 .og-dict-feedback {
-  color: var(--og-muted);
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 12px;
   font-style: italic;
+  color: var(--og-dict-secondary);
   text-decoration: none;
 }
 .og-dict-feedback:hover {
   text-decoration: underline;
 }
 
-/* Google's own dictionary box, when the card replaces it. */
+/* Google's own dictionary box, when the block replaces it. */
 [data-og-hidden="dict"] {
   display: none !important;
 }

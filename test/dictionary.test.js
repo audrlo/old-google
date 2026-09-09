@@ -103,12 +103,20 @@ console.log('\nrendering');
   check('Similar: and Opposite: rows sit under the first part of speech',
     panel.querySelector('.og-dict-block .og-dict-similar .og-dict-label').textContent === 'Similar:' &&
     panel.querySelector('.og-dict-block .og-dict-opposite .og-dict-label').textContent === 'Opposite:');
-  check('sources credited honestly', /Definitions from Wiktionary · Synonyms from Datamuse/.test(text));
+  check('a lone sense goes unnumbered, several are numbered',
+    !panel.querySelectorAll('.og-dict-senses')[0].classList.contains('og-dict-single') && panel.querySelectorAll('.og-dict-senses')[1].classList.contains('og-dict-single'));
+  check('attribution line under the heading, with a Learn more link',
+    panel.querySelector('.og-dict-heading').nextElementSibling.classList.contains('og-dict-credit') &&
+    panel.querySelector('.og-dict-credit').textContent === 'Definitions from Wiktionary · Synonyms from Datamuse · Learn more' &&
+    panel.querySelector('.og-dict-credit a').href === 'https://github.com/audrlo/old-google#dictionary');
+  check('credited once, not again at the bottom', panel.querySelectorAll('.og-dict-credit').length === 1 && !panel.querySelector('.og-dict-foot .og-dict-credit'));
+  check('no search row', !panel.querySelector('.og-dict-search, input'));
   check('feedback link', panel.querySelector('.og-dict-feedback').href.includes('github.com/audrlo/old-google/issues'));
 
   const thes = OG.renderDictionary({ word: 'gazelle', mode: 'synonym', opposite: false }, entry);
   check('thesaurus heading', thes.querySelector('.og-dict-heading').textContent === 'Similar and opposite words');
-  check('thesaurus has no search row, speaker or pronunciation', !thes.querySelector('.og-dict-search, .og-dict-speak, .og-dict-pron'));
+  check('thesaurus has no speaker or pronunciation', !thes.querySelector('.og-dict-speak, .og-dict-pron'));
+  check('thesaurus attribution line too', thes.querySelector('.og-dict-heading').nextElementSibling.classList.contains('og-dict-credit'));
   check('thesaurus shows one definition, no example', thes.querySelectorAll('.og-dict-def').length === 1 && !thes.querySelector('.og-dict-example'));
   check('Similar comes before Opposite', thes.querySelector('.og-dict-row').classList.contains('og-dict-similar'));
   const anti = OG.renderDictionary({ word: 'gazelle', mode: 'synonym', opposite: true }, entry);
@@ -135,8 +143,7 @@ console.log('\nnothing is rendered from untrusted markup');
 }
 
 /* Real Chromium: the demo stubs Wiktionary and Datamuse and answers a query
- * from ?q=. The card keeps its border once mounted in #rso, where a blanket
- * reset strips borders from every other child. */
+ * from ?q=. Style checks are the late-2023 metrics from dictionary.css. */
 const { chromium } = require('playwright');
 const demo = 'file://' + path.join(__dirname, '..', 'demo', 'serp-dictionary.html');
 
@@ -162,18 +169,21 @@ async function open(browser, qs, dark) {
       const chips = Array.from(similar.querySelectorAll('.og-dict-chip:not(.og-dict-caret)'));
       const caret = similar.querySelector('.og-dict-caret');
       return {
-        border: cs.borderTopWidth, radius: cs.borderTopLeftRadius,
+        border: cs.borderTopWidth, radius: cs.borderTopLeftRadius, bg: cs.backgroundColor, shadow: cs.boxShadow,
         width: Math.round(d.getBoundingClientRect().width),
         firstInRso: document.getElementById('rso').firstElementChild.id,
         snippetSuppressed: !document.getElementById('og-featured'),
         googleBoxHidden: !document.getElementById('google-dict-box').checkVisibility(),
-        heading: px('.og-dict-heading', 'fontSize'),
-        searchRow: !!d.querySelector('.og-dict-search input[placeholder="Search for a word"]') && px('.og-dict-search input', 'height'),
-        speaker: px('.og-dict-speak', 'width') + ' ' + px('.og-dict-speak', 'borderTopLeftRadius'),
+        heading: px('.og-dict-heading', 'fontSize') + '/' + px('.og-dict-heading', 'lineHeight'),
+        credit: d.querySelector('.og-dict-credit').textContent + ' ' + px('.og-dict-credit', 'fontSize') + ' ' + px('.og-dict-credit a', 'textDecorationLine'),
+        searchRow: !!d.querySelector('.og-dict-search, input'),
+        speaker: [px('.og-dict-speak', 'width'), px('.og-dict-speak span', 'width'), px('.og-dict-speak span', 'borderTopLeftRadius'), px('.og-dict-speak span', 'backgroundColor'), px('.og-dict-speak svg', 'fill'), px('.og-dict-speak svg', 'width')].join(' '),
         wordSize: px('.og-dict-word', 'fontSize') + '/' + px('.og-dict-word', 'lineHeight'),
         pron: d.querySelector('.og-dict-pron').textContent,
-        pos: d.querySelector('.og-dict-pos').textContent + ' ' + px('.og-dict-pos', 'fontStyle'),
+        pronColor: px('.og-dict-pron', 'color') === getComputedStyle(document.body).color,
+        pos: d.querySelector('.og-dict-pos').textContent + ' ' + px('.og-dict-pos', 'fontStyle') + ' ' + px('.og-dict-pos', 'fontSize') + ' ' + px('.og-dict-pos', 'color'),
         senses: d.querySelectorAll('.og-dict-senses li').length,
+        numbering: Array.from(d.querySelectorAll('.og-dict-senses')).map((ol) => ol.children.length + ':' + getComputedStyle(ol.firstElementChild).listStyleType).join(' '),
         example: d.querySelector('.og-dict-example').textContent,
         exampleColor: px('.og-dict-example', 'color'),
         similarLabel: px('.og-dict-similar .og-dict-label', 'color'),
@@ -186,31 +196,45 @@ async function open(browser, qs, dark) {
         hiddenChips: chips.filter((c) => c.offsetTop + c.offsetHeight > similar.clientHeight).length,
         extraHidden: !d.querySelector('.og-dict-block.og-dict-extra').checkVisibility(),
         more: d.querySelector('.og-dict-more').textContent,
+        pill: [px('.og-dict-more', 'width'), px('.og-dict-more', 'height'), px('.og-dict-more', 'borderTopLeftRadius'), px('.og-dict-more', 'backgroundColor'), px('.og-dict-more', 'fontSize')].join(' '),
+        pillOnRule: (() => {
+          const pill = d.querySelector('.og-dict-more').getBoundingClientRect();
+          const rule = d.querySelector('.og-dict-rule').getBoundingClientRect();
+          return Math.round(pill.top + pill.height / 2 - rule.top) === 18 && Math.round(rule.width) === 652;
+        })(),
+        feedback: [px('.og-dict-feedback', 'fontSize'), px('.og-dict-feedback', 'fontStyle'), px('.og-dict-feedback', 'color')].join(' '),
+        feedbackRight: Math.round(d.querySelector('.og-dict-feedback').getBoundingClientRect().right) === Math.round(d.getBoundingClientRect().right) - 16,
       };
     });
-    check('card keeps its border in #rso', r.border === '1px' && r.radius === '8px', r);
-    check('card is 652px like the column', r.width === 652, r.width);
-    check('card sits above everything else', r.firstInRso === 'og-dictionary', r.firstInRso);
+    check('a borderless block, not a card', r.border === '0px' && r.radius === '0px' && r.bg === 'rgba(0, 0, 0, 0)' && r.shadow === 'none', r);
+    check('block is 652px like the column', r.width === 652, r.width);
+    check('block sits above everything else', r.firstInRso === 'og-dictionary', r.firstInRso);
     check('featured snippet suppressed for a definition query', r.snippetSuppressed);
     check("Google's own dictionary box is hidden", r.googleBoxHidden);
-    check('"Dictionary" heading at 20px', r.heading === '20px', r.heading);
-    check('search row with a 38px input', r.searchRow === '38px', r.searchRow);
-    check('34px round speaker button', r.speaker === '34px 50%', r.speaker);
+    check('"Dictionary" heading at 22px/28px', r.heading === '22px/28px', r.heading);
+    check('attribution line at 12px with an underlined Learn more', r.credit === 'Definitions from Wiktionary · Synonyms from Datamuse · Learn more 12px underline', r.credit);
+    check('no search row', !r.searchRow);
+    check('36px speaker button holding a filled 34px #4285f4 circle and a white 22px glyph', r.speaker === '36px 34px 50% rgb(66, 133, 244) rgb(255, 255, 255) 22px', r.speaker);
     check('word at 28px/36px', r.wordSize === '28px/36px', r.wordSize);
-    check('pronunciation respelled from Datamuse', r.pron === '/ˈhæpi/', r.pron);
-    check('italic part of speech', r.pos === 'adjective italic', r.pos);
+    check('pronunciation respelled from Datamuse, in the body colour', r.pron === '/ˈhæpi/' && r.pronColor, [r.pron, r.pronColor]);
+    check('italic 14px #5e5e5e part of speech', r.pos === 'adjective italic 14px rgb(94, 94, 94)', r.pos);
     check('every sense listed (extras rendered but hidden)', r.senses === 7, r.senses);
-    check('example in straight quotes, grey', r.example === '"Music makes me feel happy."' && r.exampleColor === 'rgb(135, 135, 135)', [r.example, r.exampleColor]);
+    check('several senses numbered, a lone one not', r.numbering === '4:decimal 1:none 2:decimal', r.numbering);
+    check('example in straight quotes, grey', r.example === '"Music makes me feel happy."' && r.exampleColor === 'rgb(94, 94, 94)', [r.example, r.exampleColor]);
     check('Similar: label is green, Opposite: label is red', r.similarLabel === 'rgb(24, 128, 56)' && r.oppositeLabel === 'rgb(217, 48, 37)', [r.similarLabel, r.oppositeLabel]);
     check('all synonyms rendered as chips', r.chipCount === 26, r.chipCount);
     check('antonym chips', r.oppositeChips === 4, r.oppositeChips);
-    check('chip is 22px tall, 13px, pill, #3c4043', r.chipStyle === '22px 13px 32px rgb(60, 64, 67)', r.chipStyle);
+    check('chip is 22px tall, 13px, pill, #202124', r.chipStyle === '22px 13px 32px rgb(32, 33, 36)', r.chipStyle);
     check('Similar row clamped to one 30px row', r.clampedHeight === 30, r.clampedHeight);
     check('caret pill sits on the first row after the last chip that fits', r.caretOnFirstRow && r.hiddenChips > 0, r);
     check('third part of speech hidden until expanded', r.extraHidden);
-    check('footer link reads "Translations and more definitions"', r.more === 'Translations and more definitions', r.more);
+    check('footer pill reads "More definitions"', r.more === 'More definitions', r.more);
+    check('pill is 300x36, 18px radius, #f1f3f4, 14px', r.pill === '300px 36px 18px rgb(241, 243, 244) 14px', r.pill);
+    check('pill sits centred on a full-width rule', r.pillOnRule, r.pillOnRule);
+    check('Feedback is 12px italic #5e5e5e, right-aligned', r.feedback === '12px italic rgb(94, 94, 94)' && r.feedbackRight, [r.feedback, r.feedbackRight]);
 
     await page.click('.og-dict-similar .og-dict-caret');
+    await page.waitForTimeout(350); // the clamp releases over 0.3s
     const open1 = await page.evaluate(() => {
       const similar = document.querySelector('.og-dict-similar .og-dict-chips');
       const last = similar.querySelector('.og-dict-chip:last-child');
@@ -224,7 +248,7 @@ async function open(browser, qs, dark) {
       extraShown: document.querySelector('.og-dict-block.og-dict-extra').checkVisibility(),
       label: document.querySelector('.og-dict-more').textContent,
     }));
-    check('footer link reveals the rest and reads "Show less"', open2.extraShown && open2.label === 'Show less', open2);
+    check('the pill reveals the rest and reads "Show less"', open2.extraShown && open2.label === 'Show less', open2);
     await page.close();
   }
 
@@ -238,36 +262,42 @@ async function open(browser, qs, dark) {
       const chips = Array.from(similar.querySelectorAll('.og-dict-chip:not(.og-dict-caret)'));
       return {
         variant: d.className,
-        heading: d.querySelector('.og-dict-heading').textContent + ' ' + px('.og-dict-heading', 'fontSize'),
-        word: d.querySelector('.og-dict-word').textContent,
+        heading: d.querySelector('.og-dict-heading').textContent + ' ' + px('.og-dict-heading', 'fontSize') + ' ' + px('.og-dict-heading', 'color'),
+        credit: d.querySelector('.og-dict-credit').textContent,
+        word: d.querySelector('.og-dict-word').textContent + ' ' + px('.og-dict-word', 'fontSize') + '/' + px('.og-dict-word', 'lineHeight'),
+        pos: px('.og-dict-pos', 'fontStyle') + ' ' + px('.og-dict-pos', 'color'),
         def: d.querySelector('.og-dict-def').textContent,
         noExample: !d.querySelector('.og-dict-example'),
-        label: d.querySelector('.og-dict-similar .og-dict-label').textContent,
-        chipStyle: px('.og-dict-chip', 'height') + ' ' + px('.og-dict-chip', 'fontSize'),
+        label: d.querySelector('.og-dict-similar .og-dict-label').textContent + ' ' + px('.og-dict-similar .og-dict-label', 'color'),
+        chipStyle: px('.og-dict-chip', 'height') + ' ' + px('.og-dict-chip', 'fontSize') + ' ' + px('.og-dict-chip', 'borderTopLeftRadius'),
         chipCount: chips.length,
         clampedHeight: similar.clientHeight,
         rows: new Set(chips.filter((c) => c.offsetTop + c.offsetHeight <= similar.clientHeight).map((c) => c.offsetTop)).size,
         caret: !!similar.querySelector('.og-dict-caret'),
         oppositeRemoved: !d.querySelector('.og-dict-opposite'),
         more: d.querySelector('.og-dict-more').textContent,
+        pill: px('.og-dict-more', 'width') + ' ' + px('.og-dict-more', 'height') + ' ' + px('.og-dict-more', 'backgroundColor'),
       };
     });
     check('synonym variant', /og-dict-synonym/.test(r.variant), r.variant);
-    check('"Similar and opposite words" heading at 14px', r.heading === 'Similar and opposite words 14px', r.heading);
-    check('word', r.word === 'marvelous', r.word);
+    check('"Similar and opposite words" heading at 14px #5e5e5e', r.heading === 'Similar and opposite words 14px rgb(94, 94, 94)', r.heading);
+    check('attribution line at the top', r.credit === 'Definitions from Wiktionary · Synonyms from Datamuse · Learn more', r.credit);
+    check('word at 28px/36px', r.word === 'marvelous 28px/36px', r.word);
+    check('italic #5e5e5e part of speech', r.pos === 'italic rgb(94, 94, 94)', r.pos);
     check('one short definition, no example', /Exciting wonder or surprise/.test(r.def) && r.noExample, r.def);
-    check('label "Similar" without a colon', r.label === 'Similar', r.label);
-    check('bigger chips: 24px tall, 14px', r.chipStyle === '24px 14px', r.chipStyle);
+    check('label "Similar" without a colon, green', r.label === 'Similar rgb(24, 128, 56)', r.label);
+    check('bigger chips: 26px tall, 14px, pill', r.chipStyle === '26px 14px 32px', r.chipStyle);
     check('all 15 synonyms as chips', r.chipCount === 15, r.chipCount);
     check('clamped to two rows (68px) with a caret', r.clampedHeight === 68 && r.rows === 2 && r.caret, r);
     check('a word with no antonyms drops the Opposite row', r.oppositeRemoved);
-    check('footer link reads "More similar and opposite words"', r.more === 'More similar and opposite words', r.more);
+    check('footer pill reads "More similar and opposite words"', r.more === 'More similar and opposite words', r.more);
+    check('same 300x36 grey pill', r.pill === '300px 36px rgb(241, 243, 244)', r.pill);
 
-    const lastShown = () => page.evaluate(() => {
+    const lastShown = () => page.waitForTimeout(350).then(() => page.evaluate(() => {
       const similar = document.querySelector('.og-dict-similar .og-dict-chips');
       const last = similar.querySelector('.og-dict-chip:last-child');
       return last.offsetTop + last.offsetHeight <= similar.clientHeight;
-    });
+    }));
     await page.click('.og-dict-similar .og-dict-caret');
     check('the caret opens the list', await lastShown());
     await page.click('.og-dict-similar .og-dict-caret');
@@ -293,19 +323,25 @@ async function open(browser, qs, dark) {
       const px = (sel, prop) => getComputedStyle(d.querySelector(sel))[prop];
       return {
         dark: document.documentElement.classList.contains('og-dark'),
-        cardBg: getComputedStyle(d).backgroundColor,
+        blockBg: getComputedStyle(d).backgroundColor,
         chip: [px('.og-dict-chip', 'borderTopColor'), px('.og-dict-chip', 'color'), px('.og-dict-chip', 'backgroundColor')],
         similar: px('.og-dict-similar .og-dict-label', 'color'),
         opposite: px('.og-dict-opposite .og-dict-label', 'color'),
-        input: px('.og-dict-search input', 'backgroundColor'),
+        secondary: [px('.og-dict-pos', 'color'), px('.og-dict-example', 'color'), px('.og-dict-feedback', 'color')],
+        rule: getComputedStyle(d.querySelector('.og-dict-rule'), '::before').borderTopColor,
+        pill: px('.og-dict-more', 'backgroundColor'),
+        speaker: px('.og-dict-speak span', 'backgroundColor'),
         heading: px('.og-dict-heading', 'color'),
+        white: Array.from(d.querySelectorAll('*')).filter((e) => getComputedStyle(e).backgroundColor === 'rgb(255, 255, 255)').length,
       };
     });
     check('dark theme detected', r.dark);
-    check('card ground is dark', r.cardBg === 'rgb(32, 33, 36)', r.cardBg);
-    check('chips: #3c4043 border, #bdc1c6 text, no fill', r.chip.join() === 'rgb(60, 64, 67),rgb(189, 193, 198),rgba(0, 0, 0, 0)', r.chip);
+    check('block paints no ground of its own', r.blockBg === 'rgba(0, 0, 0, 0)', r.blockBg);
+    check('chips: #3c4043 border, #e8eaed text, no fill', r.chip.join() === 'rgb(60, 64, 67),rgb(232, 234, 237),rgba(0, 0, 0, 0)', r.chip);
     check('labels soften to #81c995 / #f28b82', r.similar === 'rgb(129, 201, 149)' && r.opposite === 'rgb(242, 139, 130)', [r.similar, r.opposite]);
-    check('nothing glares white', r.input === 'rgb(32, 33, 36)' && r.heading === 'rgb(232, 234, 237)', [r.input, r.heading]);
+    check('secondary text is #bdc1c6', r.secondary.every((c) => c === 'rgb(189, 193, 198)'), r.secondary);
+    check('rule #3c4043, pill #303134, speaker stays blue', r.rule === 'rgb(60, 64, 67)' && r.pill === 'rgb(48, 49, 52)' && r.speaker === 'rgb(66, 133, 244)', [r.rule, r.pill, r.speaker]);
+    check('nothing glares white', r.white === 0 && r.heading === 'rgb(232, 234, 237)', [r.white, r.heading]);
     await page.close();
   }
 
@@ -322,7 +358,7 @@ async function open(browser, qs, dark) {
         credit: d.querySelector('.og-dict-credit span').textContent,
       };
     });
-    check('thesaurus card still shows', r && /og-dict-synonym/.test(r.variant), r);
+    check('thesaurus block still shows', r && /og-dict-synonym/.test(r.variant), r);
     check('definition falls back to Datamuse', r && r.pos === 'adjective' && /Exciting wonder/.test(r.def), r);
     check('chips present', r && r.chips === 15, r && r.chips);
     check('credit says so', r && r.credit === 'Definitions and synonyms from Datamuse', r && r.credit);

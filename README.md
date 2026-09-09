@@ -6,10 +6,12 @@ Four things, in order of how much you'll notice them:
 
 1. **The AI Overview is gone.** So is the AI Mode tab, the AI button in the search box, and the Labs promos.
 2. **A real featured snippet comes back.** One box at the top, quoted verbatim from **one** website, with that site's favicon, URL and title underneath — the way snippets worked before they got replaced by a generated paragraph stitched from five sources.
-3. **The definition panel is back.** "gazelle definition", "define ephemeral",
+3. **The dictionary box is back.** "gazelle definition", "define ephemeral",
    "synonyms for happy" open the built-in dictionary box again — word,
-   pronunciation, part of speech, numbered senses, examples, similar words —
-   instead of a featured snippet quoting a dictionary site's citation line.
+   pronunciation with a speaker, part of speech, numbered senses, examples,
+   Similar / Opposite chips — styled as it last looked before AI Overviews
+   (early 2024), instead of a featured snippet quoting a dictionary site's
+   citation line. See [Dictionary](#dictionary).
 4. **The 2020 skin.** Arial, 20px blue titles at `#1a0dab`, a 652px column offset 180px from the left, grey `#4d5156` snippets, the flat tab strip, and the numbered `Gooooooogle` pager instead of infinite scroll.
 
 The header is left alone (see below). The results themselves are untouched — they're today's live Google results. Only the chrome around them is 2020.
@@ -154,8 +156,9 @@ The fetched HTML is parsed with an inert `DOMParser` — no scripts run, no subr
 | Follow dark mode | on | Match Google's theme. Off forces the light palette |
 | Green URLs | off | Goes further back — the pre-2016 `#006621` |
 | Numbered pages | on | Restores the `Gooooooogle` pager |
-| Rank passages with the built-in model | on | The local 63 MB QA model. Off = keyword scoring only, no model loaded |
+| Rank passages with the built-in model | on | The local QA model on WebGPU. Off = keyword scoring only, no model loaded |
 | Definition & synonym panel | on | The built-in dictionary box for define/synonym queries |
+| Oxford Languages app ID / key | empty | Optional. With credentials the box reads Oxford, the source Google used |
 | Hide the footer bar | on | Drops "Results are not personalized" and the location line |
 | Featured snippet | Build from top result | `synthesize` / `google` / `off` |
 | Prefer Wikipedia | off | When Wikipedia is on page one, quote it first |
@@ -339,13 +342,28 @@ extension the way Chrome would, and prints what each hook actually matched —
 plus `demo/live-diagnose.png`. The captured file contains your search query and
 whatever the SERP showed you, and stays on your machine.
 
-### Where the definitions come from
+## Dictionary
 
-`api.dictionaryapi.dev` (Wiktionary data, free, no key). Only the single word is
-sent, and only for queries that clearly ask for a definition — "how to define a
-function in python" and "what does a gazelle eat" do not trigger it. Turn the
-panel off in the popup and no request is ever made. API strings are inserted as
-text, never markup.
+Google's box said "Definitions from Oxford Languages". Oxford's API is keyed
+and paid (plans from £50/month; a free sandbox covers words starting with "a"),
+so the extension uses it only when the popup has an app id and key — then the
+card shows Oxford's definitions, examples, respelling and audio, and its
+thesaurus for Similar / Opposite, credited the way Google did. Without
+credentials, definitions and examples come from Wiktionary's REST API and
+synonyms, antonyms and the pronunciation from Datamuse; both are free and
+keyless. `api.dictionaryapi.dev`, the original source, was dropped after a day
+of 522s and for having almost no synonym data.
+
+Only the single word is ever sent, and only for queries that clearly ask for a
+definition — "how to define a function in python" and "what does a gazelle
+eat" do not trigger it. Turn the panel off in the popup and no request is ever
+made. API strings are inserted as text, never markup.
+
+The design is the last one before AI Overviews, read from Wayback captures of
+late 2023 and early 2024: a borderless block, a 22px "Dictionary" heading with
+the attribution under it, a filled blue speaker, the word at 28px, 14px senses,
+white pill chips clamped to one row with a caret, and a grey "More definitions"
+pill on a rule. Google's own box, where it still appears, is hidden.
 
 ## Known limits
 

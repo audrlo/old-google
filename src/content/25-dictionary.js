@@ -13,6 +13,8 @@
  * single word is ever sent, and only for queries that clearly ask for a
  * definition — see OG.dictionaryTarget. Wiktionary's HTML is reduced to text
  * before anything touches the page.
+ *
+ * The look is Google's last pre-AI-Overviews design (late 2023); see dictionary.css.
  */
 (() => {
   const OG = window.OG;
@@ -24,11 +26,11 @@
     sandbox: 'https://od-api-sandbox.oxforddictionaries.com/api/v2/',
   };
   const FEEDBACK = 'https://github.com/audrlo/old-google/issues';
+  const LEARN_MORE = 'https://github.com/audrlo/old-google#dictionary';
   const WORD = /^[a-z][a-z'’-]{1,23}(?: [a-z'’-]{2,23})?$/i;
   const SHOWN = 2; // senses per part of speech, and parts of speech, before "more definitions"
 
   const SPEAKER = '<svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>';
-  const MAGNIFIER = '<svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>';
   const CHEVRON = '<svg viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>';
 
   function assert(cond, msg) {
@@ -274,8 +276,9 @@
     }
   }
 
+  // Google numbered senses only when there were several.
   function senses(block) {
-    const list = OG.el('ol', { class: 'og-dict-senses' });
+    const list = OG.el('ol', { class: block.senses.length === 1 ? 'og-dict-senses og-dict-single' : 'og-dict-senses' });
     block.senses.forEach((s, i) => {
       const li = OG.el('li', { class: i < SHOWN ? '' : 'og-dict-extra' }, OG.el('div', { class: 'og-dict-def', text: s.text }));
       if (s.example) li.appendChild(OG.el('div', { class: 'og-dict-example', text: '"' + s.example + '"' }));
@@ -284,20 +287,26 @@
     return list;
   }
 
-  function foot(panel, entry, more) {
+  // "Definitions from Oxford Languages · Learn more", under the heading.
+  function credit(entry) {
+    return OG.el('div', { class: 'og-dict-credit' }, [
+      OG.el('span', { text: entry.credit }),
+      ' · ',
+      OG.el('a', { href: LEARN_MORE, rel: 'noopener', text: 'Learn more' }),
+    ]);
+  }
+
+  // A rule with the pill sitting on it, then Feedback.
+  function foot(panel, more) {
     const label = OG.el('span', { text: more });
-    const link = OG.el('a', { class: 'og-dict-more', href: '#', onclick: (e) => {
+    const pill = OG.el('a', { class: 'og-dict-more', href: '#', onclick: (e) => {
       e.preventDefault();
       const open = panel.classList.toggle('og-dict-expanded');
       label.textContent = open ? 'Show less' : more;
     } }, [label, icon(CHEVRON)]);
     return OG.el('div', { class: 'og-dict-foot' }, [
-      OG.el('div', { class: 'og-dict-rule' }),
-      link,
-      OG.el('div', { class: 'og-dict-credit' }, [
-        OG.el('span', { text: entry.credit }),
-        OG.el('a', { class: 'og-dict-feedback', href: FEEDBACK, rel: 'noopener', text: 'Feedback' }),
-      ]),
+      OG.el('div', { class: 'og-dict-rule' }, pill),
+      OG.el('a', { class: 'og-dict-feedback', href: FEEDBACK, rel: 'noopener', text: 'Feedback' }),
     ]);
   }
 
@@ -307,11 +316,6 @@
 
     switch (target.mode) {
       case 'define': {
-        const input = OG.el('input', { type: 'text', placeholder: 'Search for a word', 'aria-label': 'Search for a word' });
-        const search = OG.el('form', { class: 'og-dict-search', onsubmit: (e) => {
-          e.preventDefault();
-          if (input.value.trim()) location.href = defineUrl(input.value.trim());
-        } }, [input, OG.el('button', { type: 'submit', 'aria-label': 'Search' }, icon(MAGNIFIER))]);
         const speak = OG.el('button', { class: 'og-dict-speak', type: 'button', 'aria-label': 'Listen', onclick: () => {
           if (entry.audio) return new Audio(entry.audio).play();
           const u = new SpeechSynthesisUtterance(entry.word);
@@ -320,7 +324,7 @@
         } }, icon(SPEAKER));
         panel.append(
           OG.el('div', { class: 'og-dict-heading', text: 'Dictionary' }),
-          search,
+          credit(entry),
           OG.el('div', { class: 'og-dict-head' }, [speak, OG.el('div', {}, [word, OG.el('div', { class: 'og-dict-pron', text: entry.phonetic })])])
         );
         entry.blocks.forEach((block, i) => {
@@ -331,7 +335,7 @@
           if (i === 0) el.append(chipRow('similar', 'define'), chipRow('opposite', 'define'));
           panel.appendChild(el);
         });
-        panel.appendChild(foot(panel, entry, 'Translations and more definitions'));
+        panel.appendChild(foot(panel, 'More definitions'));
         return panel;
       }
       case 'synonym': {
@@ -340,11 +344,12 @@
         if (target.opposite) rows.reverse();
         panel.append(
           OG.el('div', { class: 'og-dict-heading', text: 'Similar and opposite words' }),
+          credit(entry),
           word,
           OG.el('div', { class: 'og-dict-pos', text: first.pos }),
           OG.el('div', { class: 'og-dict-def', text: first.senses[0].text }),
           ...rows,
-          foot(panel, entry, 'More similar and opposite words')
+          foot(panel, 'More similar and opposite words')
         );
         return panel;
       }
