@@ -9,6 +9,9 @@
     pagination: true,          // classic Gooooooogle numbered pages
     hideFooter: true,          // drop the "Results are not personalized" bar
     dictionary: true,          // built-in definition / synonym panel
+    oxfordAppId: '',           // Oxford Languages API credentials; empty = Wiktionary + Datamuse
+    oxfordAppKey: '',
+    oxfordSandbox: false,      // Oxford's free sandbox host (words starting with 'a' only)
     rerank: true,              // rank snippet passages with the bundled QA model
     greenUrls: false,          // 2010-style green URLs instead of 2020 grey
     snippetMode: 'synthesize', // 'off' | 'google' | 'synthesize'

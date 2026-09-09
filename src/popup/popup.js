@@ -5,6 +5,9 @@ const DEFAULTS = {
   pagination: true,
   hideFooter: true,
   dictionary: true,
+  oxfordAppId: '',
+  oxfordAppKey: '',
+  oxfordSandbox: false,
   rerank: true,
   greenUrls: false,
   snippetMode: 'synthesize',
@@ -14,8 +17,8 @@ const DEFAULTS = {
   debug: false,
 };
 
-const CHECKBOXES = ['theme', 'hideAI', 'followDark', 'pagination', 'hideFooter', 'greenUrls', 'debug', 'preferWikipedia', 'dictionary', 'rerank'];
-const TEXTAREAS = ['extraHideSelectors', 'customCss'];
+const CHECKBOXES = ['theme', 'hideAI', 'followDark', 'pagination', 'hideFooter', 'greenUrls', 'debug', 'preferWikipedia', 'dictionary', 'rerank', 'oxfordSandbox'];
+const TEXTAREAS = ['extraHideSelectors', 'customCss', 'oxfordAppId', 'oxfordAppKey'];
 
 function area() {
   return chrome.storage.sync || chrome.storage.local;

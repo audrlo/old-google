@@ -37,6 +37,7 @@ function check(name, cond, detail) {
       colWidth: getComputedStyle(document.getElementById('center_col')).width,
       gridRight: Math.round(document.getElementById('islrg').getBoundingClientRect().right),
       pager: !!document.getElementById('og-pager-wrap'),
+      featured: !!document.getElementById('og-featured'),
       aiTab: !!Array.from(document.querySelectorAll('#hdtb-msb a')).find((a) => a.textContent === 'AI Mode' && a.checkVisibility()),
       headerHooks: ['.og-searchbox', '.og-tabbar', '.og-nopill', '.og-tabs']
         .map((sel) => document.querySelectorAll(sel).length).reduce((a, b) => a + b, 0),
@@ -44,6 +45,7 @@ function check(name, cond, detail) {
 
     console.log('\n' + label);
     check('not treated as the web tab', r.isWebTab === false && r.hasWebClass === false, r);
+    check('no featured snippet on a vertical', r.featured === false, r.featured);
     check('no horizontal scrolling', r.scrollWidth <= r.clientWidth + 1, { scrollWidth: r.scrollWidth, clientWidth: r.clientWidth });
     check('the tab rule still spans the window', Math.abs(r.tabRuleWidth - r.clientWidth) <= 2 && r.tabRuleLeft === 0,
       { left: r.tabRuleLeft, width: r.tabRuleWidth, viewport: r.clientWidth });

@@ -75,7 +75,8 @@ for (const [arpabet, ipa] of [
 const entry = {
   word: 'gazelle',
   phonetic: '/ɡəˈzɛl/',
-  source: 'wiktionary',
+  audio: '',
+  credit: 'Definitions from Wiktionary · Synonyms from Datamuse',
   blocks: [
     { pos: 'noun', senses: [
       { text: 'Any of numerous antelopes of the genus Gazella, noted for their grace and speed.', example: 'a herd of gazelles' },
@@ -123,7 +124,8 @@ console.log('\nnothing is rendered from untrusted markup');
   const nasty = {
     word: '<img src=x onerror=alert(1)>',
     phonetic: '<script>bad()</script>',
-    source: 'wiktionary',
+    audio: '',
+  credit: 'Definitions from Wiktionary · Synonyms from Datamuse',
     blocks: [{ pos: 'noun', senses: [{ text: '<b>not bold</b>', example: '<i>x</i>' }] }],
   };
   const panel = OG.renderDictionary({ word: 'x', mode: 'define', opposite: false }, nasty);
@@ -336,6 +338,30 @@ async function open(browser, qs, dark) {
       googleBoxVisible: document.getElementById('google-dict-box').checkVisibility(),
     }));
     check('no card, flags cleared, Google\'s box left alone', !r.card && !r.pending && !r.active && r.googleBoxVisible, r);
+    await page.close();
+  }
+
+  console.log('\nOxford Languages with credentials');
+  {
+    const page = await open(browser, '?q=define+happy&oxford=1', false);
+    await page.waitForTimeout(250); // thesaurus chips land after the card
+    const r = await page.evaluate(() => {
+      const d = document.getElementById('og-dictionary');
+      return {
+        credit: d.querySelector('.og-dict-credit span').textContent,
+        pron: d.querySelector('.og-dict-pron').textContent,
+        senses: Array.from(d.querySelectorAll('.og-dict-def')).map((e) => e.textContent),
+        example: d.querySelector('.og-dict-example').textContent,
+        similar: Array.from(d.querySelectorAll('.og-dict-similar .og-dict-chip:not(.og-dict-caret)')).map((c) => c.textContent),
+        opposite: Array.from(d.querySelectorAll('.og-dict-opposite .og-dict-chip:not(.og-dict-caret)')).map((c) => c.textContent),
+      };
+    });
+    check('credited to Oxford Languages, like Google was', r.credit === 'Definitions from Oxford Languages', r.credit);
+    check("Oxford's respelling shown", r.pron === '/ˈhapē/', r.pron);
+    check('Oxford senses in order', r.senses[0] === 'feeling or showing pleasure or contentment' && r.senses[1] === 'fortunate and convenient', r.senses);
+    check('Oxford example quoted', r.example === '"Melissa came in looking happy and excited"', r.example);
+    check('thesaurus synonyms across senses, deduplicated', r.similar.length === 15 && r.similar[0] === 'cheerful' && r.similar[12] === 'fortunate', r.similar);
+    check('thesaurus antonyms', r.opposite.join(',') === 'sad,unhappy,unfortunate', r.opposite);
     await page.close();
   }
 

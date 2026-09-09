@@ -75,7 +75,8 @@ hr {
   color: #70757a;
   padding: 2px 0 5px;
 }
-textarea {
+textarea,
+.field input {
   width: 100%;
   font-family: monospace;
   font-size: 11px;
@@ -86,7 +87,8 @@ textarea {
   resize: vertical;
   color: #202124;
 }
-textarea:focus {
+textarea:focus,
+.field input:focus {
   outline: none;
   border-color: #1a73e8;
 }

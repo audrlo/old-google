@@ -467,7 +467,9 @@
 
   OG.ensureSnippet = function () {
     const mode = OG.settings.snippetMode;
-    if (mode === 'off' || !OG.isResultsPage()) {
+    // 2020 had featured snippets on the web tab only; Videos, Forums and the
+    // rest are lists of one kind of thing, and their column has no gap for it.
+    if (mode === 'off' || !OG.isResultsPage() || !OG.isWebTab()) {
       const old = document.getElementById('og-featured');
       if (old) old.remove();
       return;

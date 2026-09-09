@@ -6,8 +6,10 @@
  * queries return an ordinary snippet quoting a dictionary site. This puts the
  * card back and hides Google's own box if one shows up.
  *
- * Definitions and examples come from Wiktionary's REST API; synonyms, antonyms
- * and the pronunciation from Datamuse. Both are free and keyless. Only the
+ * Google's box quoted Oxford Languages; with Oxford API credentials in the
+ * popup this does too. Otherwise definitions and examples come from
+ * Wiktionary's REST API and synonyms, antonyms and the pronunciation from
+ * Datamuse, both free and keyless. Only the
  * single word is ever sent, and only for queries that clearly ask for a
  * definition — see OG.dictionaryTarget. Wiktionary's HTML is reduced to text
  * before anything touches the page.
@@ -17,6 +19,10 @@
 
   const WIKTIONARY = 'https://en.wiktionary.org/api/rest_v1/page/definition/';
   const DATAMUSE = 'https://api.datamuse.com/words?';
+  const OXFORD = {
+    production: 'https://od-api.oxforddictionaries.com/api/v2/',
+    sandbox: 'https://od-api-sandbox.oxforddictionaries.com/api/v2/',
+  };
   const FEEDBACK = 'https://github.com/audrlo/old-google/issues';
   const WORD = /^[a-z][a-z'’-]{1,23}(?: [a-z'’-]{2,23})?$/i;
   const SHOWN = 2; // senses per part of speech, and parts of speech, before "more definitions"
@@ -62,33 +68,86 @@
 
   /* ------------------------------ sources --------------------------- */
 
-  function fetchJson(url) {
+  function fetchJson(url, headers) {
     return new Promise((resolve) => {
-      chrome.runtime.sendMessage({ type: 'og:fetchJson', url }, (res) => {
+      chrome.runtime.sendMessage({ type: 'og:fetchJson', url, headers }, (res) => {
         if (chrome.runtime.lastError) return resolve({ ok: false, error: chrome.runtime.lastError.message });
         resolve(res);
       });
     });
   }
 
-  // One set of in-flight/finished fetches per word, kept for the page lifetime.
+  /** Wiktionary and Oxford hand back HTML; only its text is ever used. */
+  function text(html) {
+    return new DOMParser().parseFromString(html, 'text/html').body.textContent.replace(/\s+/g, ' ').trim();
+  }
+
+  // Every provider resolves to the same shapes, kept per word for the page lifetime:
+  //   entry:    {word, phonetic, audio, blocks: [{pos, senses: [{text, example}]}], credit}
+  //   similar:  string[]      opposite: string[]
   const cache = new Map();
   function sources(word) {
     if (cache.has(word)) return cache.get(word);
-    const w = encodeURIComponent(word);
-    const s = {
-      defs: fetchJson(WIKTIONARY + encodeURIComponent(word.replace(/ /g, '_'))),
-      meta: fetchJson(DATAMUSE + 'sp=' + w + '&md=dpr&max=1'),
-      similar: fetchJson(DATAMUSE + 'rel_syn=' + w + '&max=30'),
-      opposite: fetchJson(DATAMUSE + 'rel_ant=' + w + '&max=30'),
-    };
+    const s = OG.settings.oxfordAppId && OG.settings.oxfordAppKey ? oxford(word) : free(word);
     cache.set(word, s);
     return s;
   }
 
-  /** Wiktionary hands back HTML; only its text is ever used. */
-  function text(html) {
-    return new DOMParser().parseFromString(html, 'text/html').body.textContent.replace(/\s+/g, ' ').trim();
+  function free(word) {
+    const w = encodeURIComponent(word);
+    const defs = fetchJson(WIKTIONARY + encodeURIComponent(word.replace(/ /g, '_')), {});
+    const meta = fetchJson(DATAMUSE + 'sp=' + w + '&md=dpr&max=1', {});
+    const words = (res) => (res.ok ? res.data.map((x) => x.word) : []);
+    return {
+      entry: Promise.all([defs, meta]).then(([defs, meta]) => shapeFree(word, defs, meta)),
+      similar: fetchJson(DATAMUSE + 'rel_syn=' + w + '&max=30', {}).then(words),
+      opposite: fetchJson(DATAMUSE + 'rel_ant=' + w + '&max=30', {}).then(words),
+    };
+  }
+
+  /* Oxford Languages is what Google's own box quoted ("Definitions from Oxford
+   * Languages"). Its API is keyed and paid, so it is used only when the popup
+   * has credentials. The thesaurus endpoint carries synonyms and antonyms. */
+  function oxford(word) {
+    const base = OXFORD[OG.settings.oxfordSandbox ? 'sandbox' : 'production'];
+    const headers = { app_id: OG.settings.oxfordAppId, app_key: OG.settings.oxfordAppKey };
+    const w = encodeURIComponent(word.toLowerCase());
+    const entries = fetchJson(base + 'entries/en-us/' + w + '?fields=definitions,examples,pronunciations&strictMatch=false', headers);
+    const thesaurus = fetchJson(base + 'thesaurus/en/' + w + '?fields=synonyms,antonyms&strictMatch=false', headers);
+    const words = (field) => (res) => {
+      if (!res.ok) return [];
+      const out = [];
+      for (const sense of oxfordSenses(res.data)) for (const x of sense[field] || []) if (!out.includes(x.text)) out.push(x.text);
+      return out;
+    };
+    return { entry: entries.then((res) => shapeOxford(word, res)), similar: thesaurus.then(words('synonyms')), opposite: thesaurus.then(words('antonyms')) };
+  }
+
+  // results[].lexicalEntries[].entries[].senses[] — flattened, with the part of speech stapled on.
+  function oxfordSenses(data) {
+    assert(Array.isArray(data.results) && data.results.length, 'Oxford: no results');
+    return data.results.flatMap((r) => r.lexicalEntries.flatMap((le) => le.entries.flatMap((e) =>
+      (e.senses || []).map((sense) => ({ ...sense, pos: le.lexicalCategory.text.toLowerCase(), pronunciations: e.pronunciations || [] })))));
+  }
+
+  function shapeOxford(word, res) {
+    assert(res.ok, 'Oxford: ' + res.error);
+    const senses = oxfordSenses(res.data).filter((s) => s.definitions);
+    assert(senses.length, 'Oxford: no definitions for ' + word);
+    const blocks = [];
+    for (const s of senses) {
+      let block = blocks.find((b) => b.pos === s.pos);
+      if (!block) blocks.push((block = { pos: s.pos, senses: [] }));
+      block.senses.push({ text: text(s.definitions[0]), example: s.examples ? text(s.examples[0].text) : '' });
+    }
+    const pron = senses.flatMap((s) => s.pronunciations).find((p) => p.phoneticSpelling);
+    return {
+      word,
+      phonetic: pron ? '/' + pron.phoneticSpelling + '/' : '',
+      audio: pron && pron.audioFile ? pron.audioFile : '',
+      blocks,
+      credit: 'Definitions from Oxford Languages',
+    };
   }
 
   // -> [{pos, senses: [{text, example}]}]
@@ -143,13 +202,18 @@
   }
   OG.respell = respell; // for the tests
 
-  // -> {word, phonetic, blocks, source: 'wiktionary'|'datamuse'}
-  function shape(word, defs, meta) {
+  function shapeFree(word, defs, meta) {
     const hit = meta.ok && meta.data.length ? meta.data[0] : null; // Datamuse knows most words, not all
     const blocks = defs.ok ? blocksFromWiktionary(defs.data) : hit && hit.defs ? blocksFromDatamuse(hit) : [];
     assert(blocks.length, 'no definitions for ' + word);
     const pron = hit && hit.tags ? hit.tags.find((t) => t.startsWith('pron:')) : null;
-    return { word, phonetic: pron ? respell(pron.slice(5)) : '', blocks, source: defs.ok ? 'wiktionary' : 'datamuse' };
+    return {
+      word,
+      phonetic: pron ? respell(pron.slice(5)) : '',
+      audio: '',
+      blocks,
+      credit: defs.ok ? 'Definitions from Wiktionary · Synonyms from Datamuse' : 'Definitions and synonyms from Datamuse',
+    };
   }
 
   /* ---------------------------- rendering --------------------------- */
@@ -178,9 +242,7 @@
     return OG.el('div', { class: 'og-dict-row og-dict-' + kind }, mode === 'define' ? [chips] : [label, chips]);
   }
 
-  function fill(row, res) {
-    assert(!res.ok || Array.isArray(res.data), 'bad synonym list');
-    const words = res.ok ? res.data.map((x) => x.word) : [];
+  function fill(row, words) {
     if (!words.length) return row.remove();
     const chips = row.querySelector('.og-dict-chips');
     for (const w of words) chips.appendChild(chip(w));
@@ -229,14 +291,11 @@
       const open = panel.classList.toggle('og-dict-expanded');
       label.textContent = open ? 'Show less' : more;
     } }, [label, icon(CHEVRON)]);
-    const credit = entry.source === 'wiktionary'
-      ? 'Definitions from Wiktionary · Synonyms from Datamuse'
-      : 'Definitions and synonyms from Datamuse';
     return OG.el('div', { class: 'og-dict-foot' }, [
       OG.el('div', { class: 'og-dict-rule' }),
       link,
       OG.el('div', { class: 'og-dict-credit' }, [
-        OG.el('span', { text: credit }),
+        OG.el('span', { text: entry.credit }),
         OG.el('a', { class: 'og-dict-feedback', href: FEEDBACK, rel: 'noopener', text: 'Feedback' }),
       ]),
     ]);
@@ -254,6 +313,7 @@
           if (input.value.trim()) location.href = defineUrl(input.value.trim());
         } }, [input, OG.el('button', { type: 'submit', 'aria-label': 'Search' }, icon(MAGNIFIER))]);
         const speak = OG.el('button', { class: 'og-dict-speak', type: 'button', 'aria-label': 'Listen', onclick: () => {
+          if (entry.audio) return new Audio(entry.audio).play();
           const u = new SpeechSynthesisUtterance(entry.word);
           u.lang = 'en-US';
           speechSynthesis.speak(u);
@@ -339,10 +399,10 @@
 
     state.status = 'pending';
     const s = sources(target.word);
-    Promise.all([s.defs, s.meta])
-      .then(([defs, meta]) => {
+    s.entry
+      .then((entry) => {
         if (state.key !== key) return;
-        const panel = render(target, shape(target.word, defs, meta));
+        const panel = render(target, entry);
         state.status = 'done';
         state.panel = panel;
         OG.dictionaryPending = false;
@@ -352,7 +412,7 @@
         const card = document.getElementById('og-featured');
         if (card) card.remove();
         for (const kind of ['similar', 'opposite']) {
-          s[kind].then((res) => fill(panel.querySelector('.og-dict-' + kind), res));
+          s[kind].then((words) => fill(panel.querySelector('.og-dict-' + kind), words));
         }
         OG.log('dictionary card for', target.word, target.mode);
       })

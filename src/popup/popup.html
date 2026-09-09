@@ -62,7 +62,19 @@
         </label>
         <label class="row">
           <input type="checkbox" id="dictionary" />
-          <span><b>Definition &amp; synonym panel</b><em>Brings back the built-in dictionary box for "define x", "x definition", "synonyms for x". Looks the word up at dictionaryapi.dev.</em></span>
+          <span><b>Definition &amp; synonym panel</b><em>Brings back the built-in dictionary box for "define x", "x definition", "synonyms for x". Definitions from Wiktionary and synonyms from Datamuse, or from Oxford Languages &mdash; the source Google used &mdash; with your own API credentials below.</em></span>
+        </label>
+        <label class="field sub-row">
+          <span>Oxford Languages app ID<em>Optional. From developer.oxforddictionaries.com; plans start at &pound;50/month, the sandbox is free but only knows words starting with "a".</em></span>
+          <input type="text" id="oxfordAppId" spellcheck="false" autocomplete="off" />
+        </label>
+        <label class="field sub-row">
+          <span>Oxford Languages app key</span>
+          <input type="password" id="oxfordAppKey" spellcheck="false" autocomplete="off" />
+        </label>
+        <label class="row sub-row">
+          <input type="checkbox" id="oxfordSandbox" />
+          <span><b>Use the Oxford sandbox host</b><em>For sandbox credentials.</em></span>
         </label>
 
         <label class="row sub-row">

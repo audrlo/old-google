@@ -140,7 +140,7 @@ async function fetchPage(rawUrl) {
 }
 
 /** JSON sibling of fetchPage, for the dictionary lookup. */
-async function fetchJson(rawUrl) {
+async function fetchJson(rawUrl, headers) {
   let url;
   try {
     url = new URL(rawUrl);
@@ -162,7 +162,7 @@ async function fetchJson(rawUrl) {
       credentials: 'omit',
       redirect: 'follow',
       referrerPolicy: 'no-referrer',
-      headers: { Accept: 'application/json' },
+      headers: { Accept: 'application/json', ...headers },
     });
     if (res.status === 404) return { ok: false, error: 'not-found' };
     if (!res.ok) return { ok: false, error: 'http-' + res.status };
@@ -274,7 +274,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   }
 
   if (msg && msg.type === 'og:fetchJson') {
-    fetchJson(msg.url).then(sendResponse, (err) => sendResponse({ ok: false, error: String(err) }));
+    fetchJson(msg.url, msg.headers).then(sendResponse, (err) => sendResponse({ ok: false, error: String(err) }));
     return true;
   }
   if (!msg || msg.type !== 'og:fetch') return false;

@@ -67,11 +67,24 @@ const DATA = {
   marvelous: { wiktionary: {"en":[{"partOfSpeech":"Adjective","language":"English","definitions":[{"definition":"<span class=\"usage-label-sense\" about=\"#mwt14\" typeof=\"mw:Transclusion\"></span> Exciting wonder or surprise; astonishing; wonderful.","parsedExamples":[{"example":"I went to a <b>marvelous</b> party last week."}],"examples":["I went to a <b>marvelous</b> party last week."]}]}]}, similar: [{"word": "extraordinary", "score": 100}, {"word": "tremendous", "score": 99}, {"word": "wondrous", "score": 98}, {"word": "incredible", "score": 97}, {"word": "fantastic", "score": 96}, {"word": "supernatural", "score": 95}, {"word": "wonderful", "score": 94}, {"word": "rattling", "score": 93}, {"word": "terrific", "score": 92}, {"word": "improbable", "score": 91}, {"word": "howling", "score": 90}, {"word": "unbelievable", "score": 89}, {"word": "miraculous", "score": 88}, {"word": "marvellous", "score": 87}, {"word": "tall", "score": 86}], opposite: [], meta: [{"word": "marvelous", "score": 321100, "tags": ["adj", "pron:M AA1 R V AH0 L AH0 S "], "defs": ["adj\t(American spelling) Exciting wonder or surprise; astonishing; wonderful. "]}] },
 };
 
+// Oxford Languages API v2, trimmed: entries (definitions, examples, pronunciations) and thesaurus.
+const OXFORD = {
+  happy: {
+    entries: {"results":[{"id":"happy","lexicalEntries":[{"lexicalCategory":{"id":"adjective","text":"Adjective"},"entries":[{"pronunciations":[{"audioFile":"https://audio.oxforddictionaries.com/en/mp3/happy_us_1.mp3","phoneticNotation":"respell","phoneticSpelling":"ˈhapē"}],"senses":[{"definitions":["feeling or showing pleasure or contentment"],"examples":[{"text":"Melissa came in looking happy and excited"}]},{"definitions":["fortunate and convenient"],"examples":[{"text":"he had the happy knack of making people like him"}]}]}]}]}]},
+    thesaurus: {"results":[{"id":"happy","lexicalEntries":[{"lexicalCategory":{"id":"adjective","text":"Adjective"},"entries":[{"senses":[{"synonyms":[{"text":"cheerful"},{"text":"cheery"},{"text":"merry"},{"text":"joyful"},{"text":"jovial"},{"text":"jolly"},{"text":"jocular"},{"text":"gleeful"},{"text":"carefree"},{"text":"untroubled"},{"text":"delighted"},{"text":"smiling"}],"antonyms":[{"text":"sad"},{"text":"unhappy"}]},{"synonyms":[{"text":"fortunate"},{"text":"lucky"},{"text":"favourable"}],"antonyms":[{"text":"unfortunate"}]}]}]}]}]},
+  },
+};
+
 window.chrome = {
   storage: { sync:{get:async()=>({}),set:async()=>{}}, local:{get:async()=>({}),set:async()=>{}}, onChanged:{addListener(){}} },
   runtime: { lastError:null, sendMessage(m,cb){
     if (m.type !== 'og:fetchJson') return void setTimeout(()=>cb({ok:false,error:'offline'}), 30);
     const u = m.url;
+    if (u.includes('oxforddictionaries.com')) {
+      const o = OXFORD[decodeURIComponent(u.match(/\/en(?:-us)?\/([^?]+)/)[1])];
+      if (!o || m.headers.app_key !== 'sandbox-key') return void setTimeout(()=>cb({ok:false,error:'http-403'}), 30);
+      return void setTimeout(()=>cb({ok:true,data:u.includes('/thesaurus/') ? o.thesaurus : o.entries}), u.includes('/thesaurus/') ? 140 : 60);
+    }
     const d = DATA[decodeURIComponent(u.match(/(?:definition\/|sp=|rel_syn=|rel_ant=)([^&]+)/)[1])];
     if (!d) return void setTimeout(()=>cb({ok:false,error:'not-found'}), 30);
     if (u.includes('wiktionary')) {
@@ -94,6 +107,7 @@ window.chrome = {
 <script>
 const OG = window.OG;
 OG.settings.debug = true;
+if (PARAMS.get('oxford')) Object.assign(OG.settings, { oxfordAppId: 'demo', oxfordAppKey: 'sandbox-key', oxfordSandbox: true });
 OG.isSearchPage = () => true; OG.isResultsPage = () => true;
 OG.query = () => QUERY; OG.startIndex = () => 0;
 OG.applyClasses(); OG.purgeAI(); OG.theme(); OG.ensureDictionary(); OG.ensureSnippet(); OG.buildPagination();
