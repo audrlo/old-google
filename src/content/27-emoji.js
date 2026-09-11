@@ -12,7 +12,10 @@
 
   const MAX_MATCHES = 8;
   const GROUPS = ['Smileys & Emotion', 'People & Body', 'Animals & Nature', 'Food & Drink', 'Travel & Places', 'Activities', 'Objects', 'Symbols', 'Flags', 'Component'];
-  const EMOJI_CHAR = /\p{Extended_Pictographic}(?:️|‍\p{Extended_Pictographic}|[\u{1F3FB}-\u{1F3FF}])*/u;
+  // A pictograph with its variation selector, skin tone and ZWJ tail; a flag
+  // (two regional indicators); or a keycap.
+  const EMOJI_CHAR = /[\u{1F1E6}-\u{1F1FF}]{2}|[#*0-9]️?⃣|\p{Extended_Pictographic}(?:️|‍\p{Extended_Pictographic}|[\u{1F3FB}-\u{1F3FF}])*/u;
+  const SKIN_TONE = /[\u{1F3FB}-\u{1F3FF}]/gu;
 
   const QUESTION = /^(?:what|what's|how|why|when|where|which|who|is|are|do|does|can|meaning|define)\b/;
 
@@ -41,8 +44,12 @@
   OG.emojiMatches = function (target, table) {
     switch (target.kind) {
       case 'char': {
-        const plain = target.char.replace(/️/g, '');
-        return table.filter((e) => e.c === target.char || e.c.replace(/️/g, '') === plain);
+        // The table folds skin tones into the base emoji; a toned one you
+        // pasted is offered back exactly as typed, with the base beside it.
+        const plain = (c) => c.replace(/️/g, '').replace(SKIN_TONE, '');
+        const base = table.filter((e) => plain(e.c) === plain(target.char));
+        if (!base.length || plain(target.char) === target.char.replace(/️/g, '')) return base;
+        return [{ ...base[0], c: target.char }, ...base];
       }
       case 'name': {
         const term = target.term;

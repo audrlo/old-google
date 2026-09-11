@@ -35,6 +35,9 @@ for (const [q, want] of [
   ['shrug emoji', '🤷'], ['skull emoji copy', '💀'], ['100 emoji', '💯'], ['thumbs up emoji', '👍'],
   ['pizza emoji', '🍕'], ['heart emoji', '❤️'], ['rocket emoji copy', '🚀'], ['thinking emoji', '🤔'],
   ['crying laughing emoji', '😂'], ['🔥 emoji', '🔥'], ['🤷‍♀️', '🤷‍♀️'], ['❤️ copy', '❤️'],
+  ['american flag emoji', '🇺🇸'], ['us flag emoji', '🇺🇸'], ['usa flag emoji', '🇺🇸'], ['uk flag emoji', '🇬🇧'],
+  ['japan flag emoji', '🇯🇵'], ['japanese flag emoji', '🇯🇵'], ['mexican flag emoji', '🇲🇽'], ['🇺🇸 emoji', '🇺🇸'],
+  ['👍🏿', '👍🏿'], ['👍🏿 emoji copy', '👍🏿'], ['1️⃣ emoji', '1️⃣'], ['eggplant emoji', '🍆'], ['melting face emoji', '🫠'],
 ]) check(q + ' -> ' + want, first(q) === want, first(q));
 
 console.log('\nwhich queries do not');
@@ -47,6 +50,8 @@ console.log('\nranking');
   check('heart gives the red heart first and more hearts after', hearts[0].c === '❤️' && hearts.length > 3 && hearts.every((e) => /heart/.test(e.n) || e.k.includes('heart')), hearts.map((e) => e.c));
   check('at most eight matches', hearts.length <= 8, hearts.length);
   check('no matches for nonsense', OG.emojiMatches(OG.emojiTarget('xqzzy emoji'), TABLE).length === 0);
+  const toned = OG.emojiMatches(OG.emojiTarget('👍🏿'), TABLE);
+  check('a toned emoji comes back as typed, then its base', toned.length === 2 && toned[0].c === '👍🏿' && toned[1].c === '👍', toned.map((e) => e.c));
 }
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
