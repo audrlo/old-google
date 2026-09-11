@@ -95,13 +95,15 @@
         "src/content/hide-ai.css",
         "src/content/theme-2020.css",
         "src/content/snippet.css",
-        "src/content/dictionary.css"
+        "src/content/dictionary.css",
+        "src/content/emoji.css"
       ],
       "js": [
         "src/content/00-state.js",
         "src/content/10-purge.js",
         "src/content/20-extract.js",
         "src/content/25-dictionary.js",
+        "src/content/27-emoji.js",
         "src/content/30-snippet.js",
         "src/content/40-theme.js",
         "src/content/50-main.js"
