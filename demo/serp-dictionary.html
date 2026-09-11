@@ -85,13 +85,14 @@ window.chrome = {
       if (!o || m.headers.app_key !== 'sandbox-key') return void setTimeout(()=>cb({ok:false,error:'http-403'}), 30);
       return void setTimeout(()=>cb({ok:true,data:u.includes('/thesaurus/') ? o.thesaurus : o.entries}), u.includes('/thesaurus/') ? 140 : 60);
     }
-    const d = DATA[decodeURIComponent(u.match(/(?:definition\/|sp=|rel_syn=|rel_ant=)([^&]+)/)[1])];
+    const d = DATA[decodeURIComponent(u.match(/(?:definition\/|sp=|rel_syn=|rel_ant=|ml=)([^&]+)/)[1])];
     if (!d) return void setTimeout(()=>cb({ok:false,error:'not-found'}), 30);
     if (u.includes('wiktionary')) {
       if (PARAMS.get('fail') === 'wiktionary') return void setTimeout(()=>cb({ok:false,error:'http-522'}), 60);
       return void setTimeout(()=>cb({ok:true,data:d.wiktionary}), 60);
     }
     if (u.includes('md=dpr')) return void setTimeout(()=>cb({ok:true,data:d.meta}), 30);
+    if (u.includes('ml=')) return void setTimeout(()=>cb({ok:true,data:(d.like || [])}), 100);
     // The chips arrive after the card is up.
     if (u.includes('rel_syn')) return void setTimeout(()=>cb({ok:true,data:d.similar}), 140);
     setTimeout(()=>cb({ok:true,data:d.opposite}), 160);

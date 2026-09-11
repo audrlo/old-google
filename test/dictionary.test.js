@@ -260,7 +260,10 @@ async function open(browser, qs, dark) {
       const px = (sel, prop) => getComputedStyle(d.querySelector(sel))[prop];
       const similar = d.querySelector('.og-dict-similar .og-dict-chips');
       const chips = Array.from(similar.querySelectorAll('.og-dict-chip:not(.og-dict-caret)'));
+      const more = d.querySelector('.og-dict-more');
+      const folded = !!d.querySelector('.og-dict-extra, .og-dict-caret');
       return {
+        moreShownOnlyWhenFolded: more.hidden === !folded,
         variant: d.className,
         heading: d.querySelector('.og-dict-heading').textContent + ' ' + px('.og-dict-heading', 'fontSize') + ' ' + px('.og-dict-heading', 'color'),
         credit: d.querySelector('.og-dict-credit').textContent,
@@ -287,6 +290,7 @@ async function open(browser, qs, dark) {
     check('one short definition, no example', /Exciting wonder or surprise/.test(r.def) && r.noExample, r.def);
     check('label "Similar" without a colon, green', r.label === 'Similar rgb(24, 128, 56)', r.label);
     check('bigger chips: 26px tall, 14px, pill', r.chipStyle === '26px 14px 32px', r.chipStyle);
+    check('"More" pill only when something is folded away', r.moreShownOnlyWhenFolded, r);
     check('all 15 synonyms as chips', r.chipCount === 15, r.chipCount);
     check('clamped to two rows (68px) with a caret', r.clampedHeight === 68 && r.rows === 2 && r.caret, r);
     check('a word with no antonyms drops the Opposite row', r.oppositeRemoved);

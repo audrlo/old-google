@@ -100,9 +100,25 @@
     const defs = fetchJson(WIKTIONARY + encodeURIComponent(word.replace(/ /g, '_')), {});
     const meta = fetchJson(DATAMUSE + 'sp=' + w + '&md=dpr&max=1', {});
     const words = (res) => (res.ok ? res.data.map((x) => x.word) : []);
+    // Datamuse's strict synonym list is thin for many words (three for
+    // "inspired"), so it is topped up with "means like" words that share the
+    // word's own part of speech, the way a thesaurus would.
+    const similar = Promise.all([
+      fetchJson(DATAMUSE + 'rel_syn=' + w + '&max=30', {}),
+      fetchJson(DATAMUSE + 'ml=' + w + '&md=p&max=60', {}),
+      meta,
+    ]).then(([syn, like, meta]) => {
+      const pos = meta.ok && meta.data.length ? meta.data[0].tags.filter((t) => t in POS) : [];
+      const out = words(syn);
+      for (const x of like.ok ? like.data : []) {
+        if (out.length >= 30) break;
+        if (!out.includes(x.word) && x.tags.some((t) => pos.includes(t))) out.push(x.word);
+      }
+      return out;
+    });
     return {
       entry: Promise.all([defs, meta]).then(([defs, meta]) => shapeFree(word, defs, meta)),
-      similar: fetchJson(DATAMUSE + 'rel_syn=' + w + '&max=30', {}).then(words),
+      similar,
       opposite: fetchJson(DATAMUSE + 'rel_ant=' + w + '&max=30', {}).then(words),
     };
   }
@@ -245,11 +261,20 @@
   }
 
   function fill(row, words) {
-    if (!words.length) return row.remove();
-    const chips = row.querySelector('.og-dict-chips');
-    for (const w of words) chips.appendChild(chip(w));
-    chips.classList.add('og-dict-filled');
-    clamp(chips);
+    const panel = row.closest('.og-dict');
+    if (!words.length) row.remove();
+    else {
+      const chips = row.querySelector('.og-dict-chips');
+      for (const w of words) chips.appendChild(chip(w));
+      chips.classList.add('og-dict-filled');
+      clamp(chips);
+    }
+    showMore(panel);
+  }
+
+  /** The "More ..." pill only appears when something is actually folded away. */
+  function showMore(panel) {
+    panel.querySelector('.og-dict-more').hidden = !panel.querySelector('.og-dict-extra, .og-dict-caret');
   }
 
   /* Collapsed, a chip list shows one row (thesaurus: two); max-height hides the
@@ -364,6 +389,7 @@
     if (!rso) return;
     rso.insertBefore(panel, rso.firstChild); // where the featured snippet would go
     for (const chips of panel.querySelectorAll('.og-dict-chips')) clamp(chips);
+    showMore(panel);
   }
 
   /** Google's own dictionary box is replaced by ours, so it is hidden while ours is on its way or showing. */
