@@ -12,7 +12,13 @@ Four things, in order of how much you'll notice them:
    Similar / Opposite chips — styled as it last looked before AI Overviews
    (early 2024), instead of a featured snippet quoting a dictionary site's
    citation line. See [Dictionary](#dictionary).
-4. **The 2020 skin.** Arial, 20px blue titles at `#1a0dab`, a 652px column offset 180px from the left, grey `#4d5156` snippets, the flat tab strip, and the numbered `Gooooooogle` pager instead of infinite scroll.
+4. **The emoji box, for every emoji.** "fire emoji", "shrug emoji copy",
+   "❤️ emoji" put the emoji at the top of the results with a Copy button,
+   styled after the box Google added in June 2025 — except Google's only fires
+   for some phrasings and some emoji, and this one answers all 1,914 of them
+   from Unicode's own list (`data/emoji.json`, built by `tools/build-emoji.py`
+   from `emoji-test.txt` and CLDR's English names and keywords).
+5. **The 2020 skin.** Arial, 20px blue titles at `#1a0dab`, a 652px column offset 180px from the left, grey `#4d5156` snippets, the flat tab strip, and the numbered `Gooooooogle` pager instead of infinite scroll.
 
 The header is left alone (see below). The results themselves are untouched — they're today's live Google results. Only the chrome around them is 2020.
 

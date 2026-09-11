@@ -29,6 +29,8 @@
 html.og-2020 {
   --og-bg: #fff;
   --og-card-bg: #fff;
+  --og-emoji-copied-bg: #d3e3fd;
+  --og-emoji-copied-text: #041e49;
   --og-text: #202124;
   --og-link: #1a0dab;
   --og-visited: #681da8;
@@ -67,6 +69,8 @@ html.og-2020 {
 html.og-2020.og-dark {
   --og-bg: #202124;
   --og-card-bg: #202124;
+  --og-emoji-copied-bg: #34517d;
+  --og-emoji-copied-text: #eef0ff;
   --og-text: #e8eaed;
   --og-link: #8ab4f8;
   --og-visited: #c58af9;

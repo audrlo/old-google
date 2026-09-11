@@ -11,6 +11,7 @@
       if (OG.settings.hideAI) OG.purgeAI();
       if (OG.settings.theme) OG.theme();
       OG.ensureDictionary();
+      OG.ensureEmoji();
       OG.ensureSnippet();
       if (OG.settings.theme) OG.buildPagination();
     } catch (err) {

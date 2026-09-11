@@ -483,6 +483,12 @@
       return;
     }
     if (OG.dictionaryPending) return;
+    // So does an emoji query: the emoji box is the answer.
+    if (OG.emojiActive) {
+      const card = document.getElementById('og-featured');
+      if (card) card.remove();
+      return;
+    }
 
     const key = OG.query() + '|' + OG.startIndex() + '|' + mode;
     if (state.key !== key) {

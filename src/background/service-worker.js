@@ -257,9 +257,22 @@ chrome.tabs.onUpdated.addListener((tabId, info, tab) => {
   if (until > Date.now()) chrome.scripting.insertCSS({ target: { tabId }, css: HIGHLIGHT_CSS });
 });
 
+/* The emoji table (Unicode's list with CLDR names and keywords, built by
+ * tools/build-emoji.py) is read once here and handed to any tab that asks. */
+let emojiTable = null;
+async function loadEmojiTable() {
+  if (!emojiTable) emojiTable = await (await fetch(chrome.runtime.getURL('data/emoji.json'))).json();
+  return emojiTable;
+}
+
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   // Messages addressed to the offscreen document are not ours to handle.
   if (msg && msg.target === 'og-offscreen') return false;
+
+  if (msg && msg.type === 'og:emojiTable') {
+    loadEmojiTable().then(sendResponse);
+    return true;
+  }
 
   if (msg && msg.type === 'og:highlight') {
     pendingHighlights.set(highlightKey(msg.url), Date.now() + HIGHLIGHT_TTL_MS);
