@@ -23,9 +23,9 @@ To bring back the old previews, it extracts the page of the top result, score it
    ./tools/fetch-model.sh
    ```
 
-3. Open `chrome://extensions` in Chrome, or the equivalent in Edge, Brave, Arc or any other Chromium browser.
+3. Open `chrome://extensions` in Chrome.
 4. Turn on **Developer mode** in the top right.
 5. Click **Load unpacked** and pick the `old-google` folder.
 6. Search for something on google.com.
 
-Click the extension's toolbar icon to change settings.
+Click the extension's toolbar icon to change settings. Happy Googling!
