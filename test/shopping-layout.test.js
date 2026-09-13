@@ -21,6 +21,18 @@ function check(name, condition, detail) {
 
   const result = await page.evaluate(() => {
     const rso = document.getElementById('rso');
+    for (const [i, tab] of Array.from(document.querySelectorAll('#hdtb-msb a')).entries()) {
+      tab.href = '/search?q=desk&tab=' + i;
+    }
+    const sidebar = document.createElement('div');
+    sidebar.style.cssText = 'position:absolute;left:28px;top:210px;display:flex;flex-direction:column;gap:14px';
+    sidebar.innerHTML = [
+      '<a href="/search?q=desk&price=60">Under $60</a>',
+      '<a href="/search?q=desk&price=100">$60–$100</a>',
+      '<a href="/search?q=desk&price=200">$100–$200</a>',
+    ].join('');
+    document.body.appendChild(sidebar);
+
     rso.style.display = 'grid';
     rso.style.gridTemplateColumns = 'repeat(80, minmax(0, 1fr))';
 
@@ -34,6 +46,8 @@ function check(name, condition, detail) {
     const card = document.getElementById('og-featured').getBoundingClientRect();
     return {
       rsoDisplay: getComputedStyle(rso).display,
+      gutter: getComputedStyle(document.documentElement).getPropertyValue('--og-gutter').trim(),
+      columnLeft: Math.round(document.getElementById('center_col').getBoundingClientRect().left),
       card: { width: Math.round(card.width), height: Math.round(card.height) },
       productMarked: product.classList.contains('og-result') || !!product.querySelector('.og-title'),
       productHarvested: window.OG.organicResults().some((item) => item.host === 'shop.example'),
@@ -41,6 +55,7 @@ function check(name, condition, detail) {
   });
 
   check('results remain a vertical block', result.rsoDisplay === 'block', result);
+  check('refinement links do not replace the tab-strip gutter', result.gutter === '180px' && result.columnLeft === 180, result);
   check('featured card keeps the 652px web-column width', result.card.width === 652, result.card);
   check('featured card does not become abnormally tall', result.card.height < 500, result.card);
   check('shopping heading is not styled as an organic result', !result.productMarked, result);

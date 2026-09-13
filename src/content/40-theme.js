@@ -36,18 +36,30 @@
       stale.classList.remove('og-foot-bleed');
     }
 
-    const edges = [];
+    const links = [];
     for (const link of OG.qsa('a[href*="/search"]')) {
       if (link.hasAttribute('data-og-hidden') || !link.checkVisibility()) continue;
       const rect = link.getBoundingClientRect();
       if (rect.width < 8 || rect.height < 8) continue; // hidden or collapsed
       if (rect.top > 300) continue; // below the tab strip: a result link
-      edges.push(Math.round(rect.left + parseFloat(getComputedStyle(link).paddingLeft)));
+      links.push({
+        left: Math.round(rect.left + parseFloat(getComputedStyle(link).paddingLeft)),
+        top: Math.round(rect.top),
+      });
+    }
+
+    // Refine-result sidebars also contain /search links near the top, but they
+    // form a vertical list. The tabs form a horizontal row. Use the largest
+    // same-height group so a sidebar cannot drag the web column underneath it.
+    let row = [];
+    for (const candidate of links) {
+      const peers = links.filter((link) => Math.abs(link.top - candidate.top) <= 6);
+      if (peers.length > row.length) row = peers;
     }
 
     let gutter = 180; // the 2020 value, and the fallback
-    if (edges.length >= 2) {
-      const left = Math.min(...edges);
+    if (row.length >= 2) {
+      const left = Math.min(...row.map((link) => link.left));
       if (left > 0 && left <= 400) gutter = left;
     }
     root.style.setProperty('--og-gutter', gutter + 'px');
