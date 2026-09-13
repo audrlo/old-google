@@ -29,11 +29,10 @@
   function watchUrl() {
     let last = location.href;
     setInterval(() => {
-      if (location.href !== last) {
-        last = location.href;
-        OG.applyClasses();
-        schedule();
-      }
+      if (location.href === last) return;
+      last = location.href;
+      OG.applyClasses();
+      schedule();
     }, 400);
     window.addEventListener('popstate', schedule);
   }
@@ -53,30 +52,19 @@
 
     new MutationObserver((records) => {
       // Ignore mutations we caused ourselves.
-      for (const r of records) {
-        const target = r.target;
-        if (target && target.nodeType === 1 && target.closest && target.closest('[data-og]')) continue;
-        return schedule();
-      }
+      if (records.some((r) => !r.target.closest('[data-og]'))) schedule();
     }).observe(document.documentElement, { childList: true, subtree: true });
 
     watchUrl();
 
     chrome.storage.onChanged.addListener((changes) => {
-      let touched = false;
-      for (const key in changes) {
-        if (key in OG.DEFAULTS) {
-          OG.settings[key] = changes[key].newValue;
-          touched = true;
-        }
-      }
-      if (!touched) return;
+      const keys = Object.keys(changes).filter((key) => key in OG.DEFAULTS);
+      if (!keys.length) return;
+      for (const key of keys) OG.settings[key] = changes[key].newValue;
       OG.applyClasses();
       OG.applyUserCss();
-      const stale = document.getElementById('og-featured');
-      if (stale) stale.remove();
-      const pager = document.getElementById('og-pager-wrap');
-      if (pager && !OG.settings.pagination) pager.remove();
+      document.getElementById('og-featured')?.remove();
+      if (!OG.settings.pagination) document.getElementById('og-pager-wrap')?.remove();
       schedule();
     });
   }

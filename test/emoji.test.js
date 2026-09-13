@@ -11,6 +11,7 @@ const dom = new JSDOM('<!doctype html><html><body><div id="rso"></div></body></h
   runScripts: 'outside-only',
 });
 const win = dom.window;
+win.matchMedia = () => ({ matches: false });
 win.chrome = {
   storage: { sync: { get: async () => ({}), set: async () => {} }, local: { get: async () => ({}), set: async () => {} }, onChanged: { addListener() {} } },
   runtime: { lastError: null, sendMessage() {} },

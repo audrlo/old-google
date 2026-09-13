@@ -13,6 +13,7 @@ const dom = new JSDOM('<!doctype html><html><body><div id="rso"></div></body></h
   runScripts: 'outside-only',
 });
 const win = dom.window;
+win.matchMedia = () => ({ matches: false });
 win.chrome = {
   storage: { sync: { get: async () => ({}), set: async () => {} }, local: { get: async () => ({}), set: async () => {} }, onChanged: { addListener() {} } },
   runtime: { lastError: null, sendMessage() {} },
@@ -374,10 +375,10 @@ async function open(browser, qs, dark) {
     const page = await open(browser, '?q=zzzq+definition', false);
     const r = await page.evaluate(() => ({
       card: !!document.getElementById('og-dictionary'),
-      pending: window.OG.dictionaryPending, active: window.OG.dictionaryActive,
+      status: window.OG.dictionary.status,
       googleBoxVisible: document.getElementById('google-dict-box').checkVisibility(),
     }));
-    check('no card, flags cleared, Google\'s box left alone', !r.card && !r.pending && !r.active && r.googleBoxVisible, r);
+    check('no card, lookup marked failed, Google\'s box left alone', !r.card && r.status === 'failed' && r.googleBoxVisible, r);
     await page.close();
   }
 

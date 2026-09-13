@@ -27,9 +27,7 @@
   ]);
 
   function isSacred(node) {
-    if (!node || node === document.body || node === document.documentElement) return true;
-    if (node.id && SACRED.has(node.id)) return true;
-    return false;
+    return node === document.body || node === document.documentElement || SACRED.has(node.id);
   }
 
   /**
@@ -38,30 +36,22 @@
    * block is "the AI one" should cost at most one block, never the page.
    */
   function tooImportantToHide(node) {
-    if (!node || node.nodeType !== 1 || !node.querySelector) return true;
     if (node.matches('html,body,form,header,nav')) return true;
     // Anything containing the search box, the logo link, or the results.
-    if (node.querySelector('input[name="q"],textarea[name="q"],form[role="search"],#searchform,#rso,#center_col,#rcnt')) {
-      return true;
-    }
+    if (node.querySelector('input[name="q"],textarea[name="q"],form[role="search"],#searchform,#rso,#center_col,#rcnt')) return true;
     // Anything holding more than one result title is not an AI overview.
-    if (node.querySelectorAll('h3').length > 1) return true;
-    return false;
+    return node.querySelectorAll('h3').length > 1;
   }
 
-  function normalize(s) {
-    return (s || '').replace(/\s+/g, ' ').trim().toLowerCase();
-  }
+  const normalize = (s) => s.replace(/\s+/g, ' ').trim().toLowerCase();
 
   /** Walk up to the top-level result block this node belongs to. */
   function resultBlock(node) {
     let cur = node;
-    let steps = 0;
-    while (cur && cur.parentElement && steps < 12) {
+    for (let steps = 0; cur.parentElement && steps < 12; steps++) {
       const parent = cur.parentElement;
       if (isSacred(parent)) return isSacred(cur) ? null : cur;
       cur = parent;
-      steps++;
     }
     return null;
   }
@@ -73,7 +63,7 @@
   }
 
   function hide(node, why) {
-    if (!node || isSacred(node) || tooImportantToHide(node)) return false;
+    if (isSacred(node) || tooImportantToHide(node)) return false;
     if (node.getAttribute('data-og-hidden') === 'ai') return false;
     node.setAttribute('data-og-hidden', 'ai');
     OG.log('hid AI surface —', why, node);
@@ -89,7 +79,7 @@
       '#rcnt h1, #rcnt h2, #rcnt [role="heading"], #rcnt [aria-label], #rcnt span, #rcnt div[jsname] > span'
     );
     for (const node of candidates) {
-      const label = node.getAttribute('aria-label') || '';
+      const label = node.getAttribute('aria-label') ?? '';
       const text = node.children.length === 0 ? node.textContent : '';
       if (!looksLikeAiLabel(label) && !looksLikeAiLabel(text)) continue;
       const block = resultBlock(node);
@@ -98,36 +88,32 @@
 
     // 2. The nav strip: kill the "AI Mode" tab wherever it hides.
     for (const link of OG.qsa('a[href*="/search"], a[href*="udm="]')) {
-      const href = link.getAttribute('href') || '';
-      const label = normalize(link.textContent) || normalize(link.getAttribute('aria-label'));
-      if (href.includes('udm=50') || label === 'ai mode' || label === 'ai') {
-        // Climb only as far as a container that is still *just this tab*.
-        // [data-hveid] used to be in this list and could match a wrapper around
-        // the entire header, which took the search box with it.
-        let item = link;
-        for (let i = 0; i < 3; i++) {
-          const parent = item.parentElement;
-          if (!parent || isSacred(parent) || tooImportantToHide(parent)) break;
-          if (parent.querySelectorAll('a').length > 1) break;
-          if (normalize(parent.textContent).length > 40) break;
-          item = parent;
-        }
-        if (!isSacred(item) && !tooImportantToHide(item)) {
-          item.setAttribute('data-og-hidden', 'ai');
-          hidden++;
-        }
+      const href = link.getAttribute('href');
+      const label = normalize(link.textContent) || normalize(link.getAttribute('aria-label') ?? '');
+      if (!href.includes('udm=50') && label !== 'ai mode' && label !== 'ai') continue;
+      // Climb only as far as a container that is still *just this tab*.
+      // [data-hveid] used to be in this list and could match a wrapper around
+      // the entire header, which took the search box with it.
+      let item = link;
+      for (let i = 0; i < 3; i++) {
+        const parent = item.parentElement;
+        if (!parent || isSacred(parent) || tooImportantToHide(parent)) break;
+        if (parent.querySelectorAll('a').length > 1) break;
+        if (normalize(parent.textContent).length > 40) break;
+        item = parent;
       }
+      if (isSacred(item) || tooImportantToHide(item)) continue;
+      item.setAttribute('data-og-hidden', 'ai');
+      hidden++;
     }
 
     // 3. The AI button that now lives inside the search box.
     for (const btn of OG.qsa('#searchform [role="button"], form[role="search"] [role="button"], .RNNXgb [role="button"]')) {
-      const label = normalize(btn.getAttribute('aria-label'));
-      if (label.includes('ai mode') || label.includes('ask ai') || label.includes('gemini')) {
-        if (!tooImportantToHide(btn)) {
-          btn.setAttribute('data-og-hidden', 'ai');
-          hidden++;
-        }
-      }
+      const label = normalize(btn.getAttribute('aria-label') ?? '');
+      if (!label.includes('ai mode') && !label.includes('ask ai') && !label.includes('gemini')) continue;
+      if (tooImportantToHide(btn)) continue;
+      btn.setAttribute('data-og-hidden', 'ai');
+      hidden++;
     }
 
     if (hidden) OG.log('purge pass hid', hidden, 'node(s)');

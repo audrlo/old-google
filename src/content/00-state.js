@@ -22,32 +22,24 @@
     debug: false,
   };
 
-  OG.settings = Object.assign({}, OG.DEFAULTS);
-  OG.settingsLoaded = false;
-
-  function area() {
-    try {
-      if (chrome.storage && chrome.storage.sync) return chrome.storage.sync;
-    } catch (_) {}
-    return chrome.storage.local;
-  }
-  OG.storageArea = area;
+  OG.settings = { ...OG.DEFAULTS };
 
   OG.loadSettings = async function () {
-    try {
-      const stored = await area().get(OG.DEFAULTS);
-      Object.assign(OG.settings, stored);
-    } catch (_) {
-      try {
-        Object.assign(OG.settings, await chrome.storage.local.get(OG.DEFAULTS));
-      } catch (_) {}
-    }
-    OG.settingsLoaded = true;
-    return OG.settings;
+    Object.assign(OG.settings, await chrome.storage.sync.get(OG.DEFAULTS));
   };
 
   OG.log = function (...args) {
     if (OG.settings.debug) console.log('%c[old-google]', 'color:#1a73e8;font-weight:bold', ...args);
+  };
+
+  /** Ask the service worker. Every answer is {ok, ...}; silence past the deadline is one too. */
+  OG.ask = function (message, timeoutMs) {
+    return new Promise((resolve) => {
+      setTimeout(() => resolve({ ok: false, error: 'timeout' }), timeoutMs);
+      chrome.runtime.sendMessage(message, (res) => {
+        resolve(chrome.runtime.lastError ? { ok: false, error: chrome.runtime.lastError.message } : res ?? { ok: false, error: 'empty' });
+      });
+    });
   };
 
   /* ---------- page helpers ---------- */
@@ -75,40 +67,32 @@
   };
 
   OG.query = function () {
-    return new URLSearchParams(location.search).get('q') || '';
+    return new URLSearchParams(location.search).get('q');
   };
   OG.startIndex = function () {
-    return parseInt(new URLSearchParams(location.search).get('start') || '0', 10) || 0;
+    return parseInt(new URLSearchParams(location.search).get('start'), 10) || 0;
   };
 
   /* ---------- dom helpers ---------- */
 
+  /** Build an element. `class`, `text` and `on*` props are special; a null prop is skipped. */
   OG.el = function (tag, props, children) {
     const node = document.createElement(tag);
-    if (props) {
-      for (const k in props) {
-        if (k === 'class') node.className = props[k];
-        else if (k === 'text') node.textContent = props[k];
-        else if (k === 'style') node.setAttribute('style', props[k]);
-        else if (k.startsWith('on') && typeof props[k] === 'function') node.addEventListener(k.slice(2), props[k]);
-        else if (props[k] != null) node.setAttribute(k, props[k]);
-      }
+    for (const [k, v] of Object.entries(props ?? {})) {
+      if (k === 'class') node.className = v;
+      else if (k === 'text') node.textContent = v;
+      else if (k.startsWith('on')) node.addEventListener(k.slice(2), v);
+      else if (v != null) node.setAttribute(k, v);
     }
-    for (const c of [].concat(children || [])) {
-      if (c == null) continue;
-      node.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
-    }
+    node.append(...[].concat(children ?? []));
     node.setAttribute('data-og', '1');
     return node;
   };
 
-  OG.qsa = function (sel, root) {
-    try {
-      return Array.from((root || document).querySelectorAll(sel));
-    } catch (_) {
-      return [];
-    }
-  };
+  OG.qsa = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+
+  /** The results column, where a card goes. Null before Google has drawn it. */
+  OG.column = () => document.getElementById('rso') || document.getElementById('center_col');
 
   OG.throttle = function (fn, ms) {
     let queued = false;
@@ -139,7 +123,7 @@
     root.classList.toggle('og-hide-ads', on && s.hideAds);
     // Before the DOM exists we can only guess from the OS preference;
     // OG.detectTheme() corrects this by measuring Google's own header.
-    const prefersDark = !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    const prefersDark = matchMedia('(prefers-color-scheme: dark)').matches;
     root.classList.toggle('og-dark', on && s.theme && s.followDark && prefersDark);
     root.classList.toggle('og-green-urls', on && s.theme && s.greenUrls);
     root.classList.toggle('og-hide-footer', on && s.hideFooter);
@@ -149,17 +133,13 @@
   /** User-supplied selectors + custom CSS live in one <style> we own. */
   OG.applyUserCss = function () {
     const s = OG.settings;
-    let css = '';
-    const extra = (s.extraHideSelectors || '')
-      .split(/[\n,]+/)
-      .map((x) => x.trim())
-      .filter(Boolean);
-    if (extra.length && s.hideAI) css += extra.join(',\n') + ' { display: none !important; }\n';
+    const extra = s.extraHideSelectors.split(/[\n,]+/).map((x) => x.trim()).filter(Boolean);
+    let css = extra.length && s.hideAI ? extra.join(',\n') + ' { display: none !important; }\n' : '';
     if (s.customCss) css += s.customCss + '\n';
 
     let tag = document.getElementById('og-user-css');
     if (!css) {
-      if (tag) tag.remove();
+      tag?.remove();
       return;
     }
     if (!tag) {

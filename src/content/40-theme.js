@@ -14,7 +14,7 @@
   /* --------------------------- theme sensing -------------------------- */
 
   function relativeLuminance(css) {
-    const m = /rgba?\(([^)]+)\)/.exec(css || '');
+    const m = /rgba?\(([^)]+)\)/.exec(css);
     if (!m) return null;
     const parts = m[1].split(',').map((n) => parseFloat(n));
     if (parts.length < 3 || parts.some(isNaN)) return null;
@@ -25,7 +25,6 @@
     };
     return 0.2126 * channel(parts[0]) + 0.7152 * channel(parts[1]) + 0.0722 * channel(parts[2]);
   }
-  OG.relativeLuminance = relativeLuminance;
 
   /**
    * Is Google in dark mode?
@@ -75,21 +74,19 @@
     // flush against the left edge.
     const edges = [];
     for (const link of OG.qsa('a[href*="/search"]')) {
-      if (link.hasAttribute('data-og-hidden')) continue;
-      if (link.checkVisibility && !link.checkVisibility()) continue;
+      if (link.hasAttribute('data-og-hidden') || !link.checkVisibility()) continue;
       const rect = link.getBoundingClientRect();
       if (rect.width < 8 || rect.height < 8) continue; // hidden or collapsed
       if (rect.top > 300) continue; // below the tab strip: a result link
       // The link's own padding sits inside its box; the text edge is what the
       // eye actually lines up against.
-      const padding = parseFloat(getComputedStyle(link).paddingLeft) || 0;
-      edges.push(Math.round(rect.left + padding));
+      edges.push(Math.round(rect.left + parseFloat(getComputedStyle(link).paddingLeft)));
     }
 
     // One stray link is not a tab strip. Require a few before trusting it.
     let gutter = 180; // the 2020 value, and the fallback
     if (edges.length >= 2) {
-      const left = Math.min.apply(null, edges);
+      const left = Math.min(...edges);
       if (left > 0 && left <= 400) gutter = left;
     }
     root.style.setProperty('--og-gutter', gutter + 'px');
@@ -105,7 +102,7 @@
     if (!rhs) return;
     let content = false;
     for (const child of Array.from(rhs.children)) {
-      const hasText = (child.textContent || '').trim().length > 2;
+      const hasText = child.textContent.trim().length > 2;
       const hasMedia = !!child.querySelector('img, svg, canvas');
       if (hasText || hasMedia) {
         child.classList.add('og-kp');
@@ -139,7 +136,7 @@
       icon.classList.add('og-favicon');
       let node = icon.parentElement;
       for (let i = 0; i < 3 && node && node !== host; i++) {
-        if ((node.textContent || '').trim().length !== 0) break;
+        if (node.textContent.trim().length !== 0) break;
         node.classList.add('og-nochrome');
         node = node.parentElement;
       }
@@ -155,11 +152,9 @@
   function collapseSiteHeader(block) {
     const cite = block.querySelector('cite');
     if (!cite) return;
-    const wrap = cite.parentElement;
-    if (!wrap) return;
-    const prev = wrap.previousElementSibling;
+    const prev = cite.parentElement.previousElementSibling;
     if (!prev || prev.hasAttribute('data-og-hidden')) return;
-    const text = (prev.textContent || '').trim();
+    const text = prev.textContent.trim();
     if (!text || text.length > 60) return;
     if (/[\/\u203a]|https?:/.test(text)) return;      // that's a URL, keep it
     if (prev.querySelector('cite, h3, img, svg')) return; // favicon/title, keep
@@ -174,24 +169,20 @@
       if (h3.closest('#og-featured')) continue;
       const link = h3.closest('a[href]');
       if (!link) continue;
-      const block = h3.closest('div.g, div.MjjYud, div[data-hveid]');
-      if (block && !block.classList.contains('og-result')) block.classList.add('og-result');
       h3.classList.add('og-title');
       link.classList.add('og-title-link');
-
-      if (block) {
-        const cite = block.querySelector('cite');
-        if (cite) cite.classList.add('og-cite');
-        collapseSiteHeader(block);
-        stripFaviconChrome(block);
-        const snippet = block.querySelector('.VwiC3b, [data-sncf], [data-snf], .lyLwlc');
-        if (snippet) snippet.classList.add('og-snippet');
-      }
+      const block = h3.closest('div.g, div.MjjYud, div[data-hveid]');
+      if (!block) continue;
+      block.classList.add('og-result');
+      block.querySelector('cite')?.classList.add('og-cite');
+      collapseSiteHeader(block);
+      stripFaviconChrome(block);
+      block.querySelector('.VwiC3b, [data-sncf], [data-snf], .lyLwlc')?.classList.add('og-snippet');
     }
 
     for (const menu of OG.qsa('#rso [aria-label*="About this result"], #rso [aria-label*="About this Result"]')) {
       const btn = menu.closest('[role="button"], [jsaction]') || menu;
-      if ((btn.textContent || '').trim().length < 3) btn.setAttribute('data-og-hidden', 'about');
+      if (btn.textContent.trim().length < 3) btn.setAttribute('data-og-hidden', 'about');
     }
 
     // The header — search box, tab strip, the rule under it — is deliberately
@@ -261,9 +252,7 @@
 
   OG.buildPagination = function () {
     if (!OG.settings.pagination || !OG.isResultsPage() || !OG.isWebTab()) return;
-    const existing = document.getElementById('og-pager-wrap');
-    if (existing && existing.isConnected) return;
-    if (existing) existing.remove();
+    if (document.getElementById('og-pager-wrap')) return;
 
     const anchor = document.getElementById('botstuff') || document.getElementById('rso');
     if (!anchor) return;
@@ -276,7 +265,7 @@
 
     // Google's own "More results" button / infinite scroll sentinel.
     for (const node of OG.qsa('#botstuff [role="button"], .GNJvt, .T7sFge, #pnnext')) {
-      const label = (node.textContent || '').trim().toLowerCase();
+      const label = node.textContent.trim().toLowerCase();
       if (label === 'more results' || label === 'show more results') {
         const block = node.closest('div[data-hveid], div') || node;
         block.setAttribute('data-og-hidden', 'more');
@@ -284,19 +273,12 @@
     }
   };
 
-  /* ------------------------------ misc ------------------------------- */
-
-  /** 2020 said "About 12,300,000 results (0.51 seconds)" right under the tabs. */
-  OG.fixStats = function () {
-    const stats = document.getElementById('result-stats');
-    if (stats) stats.classList.add('og-stats');
-  };
-
   OG.theme = function () {
     OG.detectTheme();
     OG.markColumns();
     OG.markKnowledgePanel();
     OG.markResults();
-    OG.fixStats();
+    // 2020 said "About 12,300,000 results (0.51 seconds)" right under the tabs.
+    document.getElementById('result-stats')?.classList.add('og-stats');
   };
 })();

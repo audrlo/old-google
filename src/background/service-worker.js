@@ -16,51 +16,41 @@ const memCache = new Map(); // url -> { at, payload }
 const lastHit = new Map();  // host -> timestamp
 const inFlight = new Map(); // url -> Promise
 
-function now() {
-  return Date.now();
-}
-
-function cacheKey(url) {
-  return 'og:page:' + url;
-}
+const cacheKey = (url) => 'og:page:' + url;
 
 async function readCache(url) {
   const hit = memCache.get(url);
-  if (hit && now() - hit.at < TTL_MS) return hit.payload;
-  try {
-    const stored = await chrome.storage.session.get(cacheKey(url));
-    const rec = stored[cacheKey(url)];
-    if (rec && now() - rec.at < TTL_MS) {
-      memCache.set(url, rec);
-      return rec.payload;
-    }
-  } catch (_) {
-    /* session storage unavailable — memory cache is enough */
-  }
-  return null;
+  if (hit && Date.now() - hit.at < TTL_MS) return hit.payload;
+  const rec = (await chrome.storage.session.get(cacheKey(url)))[cacheKey(url)];
+  if (!rec || Date.now() - rec.at >= TTL_MS) return null;
+  memCache.set(url, rec);
+  return rec.payload;
 }
 
 async function writeCache(url, payload) {
-  const rec = { at: now(), payload };
+  const rec = { at: Date.now(), payload };
   memCache.set(url, rec);
   if (memCache.size > 60) memCache.delete(memCache.keys().next().value);
-  try {
-    await chrome.storage.session.set({ [cacheKey(url)]: rec });
-  } catch (_) {
-    /* non-fatal */
-  }
+  await chrome.storage.session.set({ [cacheKey(url)]: rec });
 }
 
 async function politeDelay(host) {
-  const last = lastHit.get(host) || 0;
-  const wait = MIN_GAP_PER_HOST_MS - (now() - last);
+  const wait = MIN_GAP_PER_HOST_MS - (Date.now() - (lastHit.get(host) ?? 0));
   if (wait > 0) await new Promise((r) => setTimeout(r, wait));
-  lastHit.set(host, now());
+  lastHit.set(host, Date.now());
 }
+
+/** GET with a deadline, no credentials and no referrer. */
+function get(url, headers) {
+  const ctrl = new AbortController();
+  setTimeout(() => ctrl.abort(), TIMEOUT_MS);
+  return fetch(url, { signal: ctrl.signal, credentials: 'omit', cache: 'no-store', redirect: 'follow', referrerPolicy: 'no-referrer', headers });
+}
+
+const failure = (err) => ({ ok: false, error: err.name === 'AbortError' ? 'timeout' : 'network' });
 
 /** Read at most MAX_BYTES of the body, decoding as UTF-8. */
 async function readCapped(response) {
-  if (!response.body) return await response.text();
   const reader = response.body.getReader();
   const decoder = new TextDecoder('utf-8', { fatal: false });
   let out = '';
@@ -71,66 +61,36 @@ async function readCapped(response) {
     total += value.byteLength;
     out += decoder.decode(value, { stream: true });
     if (total >= MAX_BYTES) {
-      try {
-        await reader.cancel();
-      } catch (_) {}
+      await reader.cancel();
       break;
     }
   }
-  out += decoder.decode();
-  return out;
+  return out + decoder.decode();
 }
 
+/** @returns {{ok: true, html, finalUrl} | {ok: false, error}} */
 async function fetchPage(rawUrl) {
-  let url;
-  try {
-    url = new URL(rawUrl);
-  } catch (_) {
-    return { ok: false, error: 'bad-url' };
-  }
-  if (url.protocol !== 'https:' && url.protocol !== 'http:') {
-    return { ok: false, error: 'bad-scheme' };
-  }
-
+  const url = new URL(rawUrl);
   const cached = await readCache(url.href);
-  if (cached) return { ...cached, cached: true };
-
+  if (cached) return cached;
   if (inFlight.has(url.href)) return inFlight.get(url.href);
 
   const job = (async () => {
     await politeDelay(url.host);
-
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
     try {
-      const res = await fetch(url.href, {
-        signal: ctrl.signal,
-        credentials: 'omit',
-        cache: 'no-store',
-        redirect: 'follow',
-        referrerPolicy: 'no-referrer',
-        headers: { Accept: 'text/html,application/xhtml+xml' },
-      });
+      const res = await get(url.href, { Accept: 'text/html,application/xhtml+xml' });
       if (!res.ok) return { ok: false, error: 'http-' + res.status };
-
-      const type = (res.headers.get('content-type') || '').toLowerCase();
-      if (!type.includes('html') && !type.includes('xml') && type !== '') {
-        return { ok: false, error: 'not-html' };
-      }
+      const type = (res.headers.get('content-type') ?? '').toLowerCase();
+      if (type && !type.includes('html') && !type.includes('xml')) return { ok: false, error: 'not-html' };
       // Honour a site's wish not to be excerpted.
-      const robots = (res.headers.get('x-robots-tag') || '').toLowerCase();
-      if (robots.includes('nosnippet') || robots.includes('noarchive')) {
-        return { ok: false, error: 'nosnippet' };
-      }
-
-      const html = await readCapped(res);
-      const payload = { ok: true, html, finalUrl: res.url || url.href };
+      const robots = (res.headers.get('x-robots-tag') ?? '').toLowerCase();
+      if (robots.includes('nosnippet') || robots.includes('noarchive')) return { ok: false, error: 'nosnippet' };
+      const payload = { ok: true, html: await readCapped(res), finalUrl: res.url };
       await writeCache(url.href, payload);
       return payload;
     } catch (err) {
-      return { ok: false, error: err && err.name === 'AbortError' ? 'timeout' : 'network' };
+      return failure(err);
     } finally {
-      clearTimeout(timer);
       inFlight.delete(url.href);
     }
   })();
@@ -139,82 +99,41 @@ async function fetchPage(rawUrl) {
   return job;
 }
 
-/** JSON sibling of fetchPage, for the dictionary lookup. */
-async function fetchJson(rawUrl, headers) {
-  let url;
+/** JSON sibling of fetchPage, for the dictionary lookup. No politeDelay: these
+ *  are APIs built for concurrent calls, and the card asks Datamuse three things at once.
+ *  @returns {{ok: true, data} | {ok: false, error}} */
+async function fetchJson(url, headers) {
+  const cached = await readCache(url);
+  if (cached) return cached;
   try {
-    url = new URL(rawUrl);
-  } catch (_) {
-    return { ok: false, error: 'bad-url' };
-  }
-  if (url.protocol !== 'https:') return { ok: false, error: 'bad-scheme' };
-
-  const cached = await readCache(url.href);
-  if (cached) return { ...cached, cached: true };
-
-  // No politeDelay here: these are APIs built for concurrent calls, and the
-  // dictionary card asks Datamuse three things at once.
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
-  try {
-    const res = await fetch(url.href, {
-      signal: ctrl.signal,
-      credentials: 'omit',
-      redirect: 'follow',
-      referrerPolicy: 'no-referrer',
-      headers: { Accept: 'application/json', ...headers },
-    });
+    const res = await get(url, { Accept: 'application/json', ...headers });
     if (res.status === 404) return { ok: false, error: 'not-found' };
     if (!res.ok) return { ok: false, error: 'http-' + res.status };
-    const text = await readCapped(res);
-    let data;
-    try {
-      data = JSON.parse(text);
-    } catch (_) {
-      return { ok: false, error: 'bad-json' };
-    }
-    const payload = { ok: true, data };
-    await writeCache(url.href, payload);
+    const payload = { ok: true, data: JSON.parse(await readCapped(res)) };
+    await writeCache(url, payload);
     return payload;
   } catch (err) {
-    return { ok: false, error: err && err.name === 'AbortError' ? 'timeout' : 'network' };
-  } finally {
-    clearTimeout(timer);
+    return failure(err);
   }
 }
 
 /* ---------------------- offscreen inference host ---------------------- */
 
-const OFFSCREEN_PATH = 'src/offscreen/offscreen.html';
 let offscreenReady = null;
-
-async function hasOffscreen() {
-  if (chrome.runtime.getContexts) {
-    const contexts = await chrome.runtime.getContexts({ contextTypes: ['OFFSCREEN_DOCUMENT'] });
-    return contexts.length > 0;
-  }
-  return false;
-}
 
 /** Create the offscreen document once; concurrent callers share the attempt. */
 function ensureOffscreen() {
-  if (offscreenReady) return offscreenReady;
-  offscreenReady = (async () => {
-    if (await hasOffscreen()) return true;
-    try {
-      await chrome.offscreen.createDocument({
-        url: OFFSCREEN_PATH,
-        reasons: ['WORKERS'],
-        justification: 'Runs the local question-answering model that ranks candidate snippet passages.',
-      });
-    } catch (err) {
+  offscreenReady ??= (async () => {
+    const contexts = await chrome.runtime.getContexts({ contextTypes: ['OFFSCREEN_DOCUMENT'] });
+    if (contexts.length) return;
+    await chrome.offscreen.createDocument({
+      url: 'src/offscreen/offscreen.html',
+      reasons: ['WORKERS'],
+      justification: 'Runs the local question-answering model that ranks candidate snippet passages.',
+    }).catch((err) => {
       // Another worker invocation may have created it between the check and here.
-      if (!/already/i.test(String(err))) {
-        offscreenReady = null;
-        throw err;
-      }
-    }
-    return true;
+      if (!/already/i.test(String(err))) throw err;
+    });
   })().catch((err) => {
     offscreenReady = null;
     throw err;
@@ -224,14 +143,8 @@ function ensureOffscreen() {
 
 async function scorePassages(query, passages) {
   await ensureOffscreen();
-  const res = await chrome.runtime.sendMessage({
-    target: 'og-offscreen',
-    type: 'og:score',
-    query,
-    passages,
-  });
-  if (!res || !res.ok) return { ok: false, error: (res && res.error) || 'no-response' };
-  return res;
+  const res = await chrome.runtime.sendMessage({ target: 'og-offscreen', type: 'og:score', query, passages });
+  return res ?? { ok: false, error: 'no-response' };
 }
 
 /* ------------------------------------------------------------------------
@@ -247,7 +160,10 @@ const HIGHLIGHT_TTL_MS = 30 * 1000;
 const HIGHLIGHT_CSS = '::target-text { background-color: #e5d4f6 !important; color: #202124 !important; }';
 const pendingHighlights = new Map(); // origin + pathname -> expiry
 
-const highlightKey = (url) => new URL(url).origin + new URL(url).pathname;
+function highlightKey(url) {
+  const u = new URL(url);
+  return u.origin + u.pathname;
+}
 
 chrome.tabs.onUpdated.addListener((tabId, info, tab) => {
   if (info.status !== 'complete') return;
@@ -260,39 +176,27 @@ chrome.tabs.onUpdated.addListener((tabId, info, tab) => {
 /* The emoji table (Unicode's list with CLDR names and keywords, built by
  * tools/build-emoji.py) is read once here and handed to any tab that asks. */
 let emojiTable = null;
-async function loadEmojiTable() {
-  if (!emojiTable) emojiTable = await (await fetch(chrome.runtime.getURL('data/emoji.json'))).json();
-  return emojiTable;
+async function emoji() {
+  emojiTable ??= await (await fetch(chrome.runtime.getURL('data/emoji.json'))).json();
+  return { ok: true, table: emojiTable };
 }
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   // Messages addressed to the offscreen document are not ours to handle.
-  if (msg && msg.target === 'og-offscreen') return false;
-
-  if (msg && msg.type === 'og:emojiTable') {
-    loadEmojiTable().then(sendResponse);
-    return true;
+  if (msg.target === 'og-offscreen') return false;
+  const reply = (promise) => {
+    promise.then(sendResponse, (err) => sendResponse({ ok: false, error: String(err.message ?? err) }));
+    return true; // async
+  };
+  switch (msg.type) {
+    case 'og:fetch': return reply(fetchPage(msg.url));
+    case 'og:fetchJson': return reply(fetchJson(msg.url, msg.headers));
+    case 'og:score': return reply(scorePassages(msg.query, msg.passages));
+    case 'og:emojiTable': return reply(emoji());
+    case 'og:highlight':
+      pendingHighlights.set(highlightKey(msg.url), Date.now() + HIGHLIGHT_TTL_MS);
+      return false;
+    default:
+      throw new Error('unknown message ' + msg.type);
   }
-
-  if (msg && msg.type === 'og:highlight') {
-    pendingHighlights.set(highlightKey(msg.url), Date.now() + HIGHLIGHT_TTL_MS);
-    return false;
-  }
-
-  if (msg && msg.type === 'og:score') {
-    scorePassages(msg.query, msg.passages).then(sendResponse, (err) =>
-      sendResponse({ ok: false, error: String((err && err.message) || err) })
-    );
-    return true;
-  }
-
-  if (msg && msg.type === 'og:fetchJson') {
-    fetchJson(msg.url, msg.headers).then(sendResponse, (err) => sendResponse({ ok: false, error: String(err) }));
-    return true;
-  }
-  if (!msg || msg.type !== 'og:fetch') return false;
-  fetchPage(msg.url).then(sendResponse, (err) =>
-    sendResponse({ ok: false, error: String((err && err.message) || err) })
-  );
-  return true; // async
 });

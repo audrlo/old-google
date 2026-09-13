@@ -42,8 +42,7 @@
 
   /** Load the runtime and model once; returns which backend is in use. */
   function init() {
-    if (ready) return ready;
-    ready = (async () => {
+    ready ??= (async () => {
       const kind = await backend();
       await loadScript(RUNTIMES[kind].script);
       self.ort.env.wasm.wasmPaths = '/vendor/ort/';

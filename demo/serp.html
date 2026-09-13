@@ -127,6 +127,8 @@ window.chrome = {
 <script src="../src/content/00-state.js"></script>
 <script src="../src/content/10-purge.js"></script>
 <script src="../src/content/20-extract.js"></script>
+<script src="../src/content/25-dictionary.js"></script>
+<script src="../src/content/27-emoji.js"></script>
 <script src="../src/content/30-snippet.js"></script>
 <script src="../src/content/40-theme.js"></script>
 <script>
@@ -151,7 +153,7 @@ OG.buildPagination();
 notes.push('pager: ' + (document.getElementById('og-pager-wrap') ? 'built' : 'MISSING'));
 
 // end-to-end: extraction against the stubbed fetch
-const answer = OG.extractAnswer(SAMPLE_ARTICLE, QUERY, 'https://en.wikipedia.org/wiki/Black_hole');
+const answer = OG.extractAnswer(SAMPLE_ARTICLE, QUERY, 'https://en.wikipedia.org/wiki/Black_hole', '');
 notes.push('extract: ' + (answer ? answer.kind + ' (conf ' + answer.confidence.toFixed(2) + ')' : 'NOTHING'));
 if (answer) {
   answer.origin = 'extracted';
@@ -160,7 +162,7 @@ if (answer) {
 }
 
 // and the list-shaped variant, for the how-to case
-const listAnswer = OG.extractAnswer(SAMPLE_ARTICLE, 'how do black holes form', 'https://en.wikipedia.org/wiki/Black_hole');
+const listAnswer = OG.extractAnswer(SAMPLE_ARTICLE, 'how do black holes form', 'https://en.wikipedia.org/wiki/Black_hole', '');
 notes.push('list case: ' + (listAnswer ? listAnswer.kind : 'NOTHING'));
 
 document.getElementById('demoBar').innerHTML =

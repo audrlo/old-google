@@ -16,6 +16,7 @@ const dom = new JSDOM('<!doctype html><html><body></body></html>', {
   runScripts: 'outside-only',
 });
 const win = dom.window;
+win.matchMedia = () => ({ matches: false });
 win.chrome = {
   storage: {
     sync: { get: async () => ({}), set: async () => {} },
@@ -53,7 +54,7 @@ function group(name) {
 
 group('definitional query -> paragraph from the lead');
 {
-  const r = OG.extractAnswer(fixtures.wikipedia, 'what is a black hole', 'https://en.wikipedia.org/wiki/Black_hole');
+  const r = OG.extractAnswer(fixtures.wikipedia, 'what is a black hole', 'https://en.wikipedia.org/wiki/Black_hole', '');
   check('returns an answer', !!r);
   check('kind is paragraph', r && r.kind === 'paragraph', r && r.kind);
   check('quotes the lead sentence', r && r.text.startsWith('A black hole is a region of spacetime'), r && r.text.slice(0, 60));
@@ -66,7 +67,7 @@ group('definitional query -> paragraph from the lead');
 
 group('how-to query -> ordered list');
 {
-  const r = OG.extractAnswer(fixtures.wikipedia, 'how do black holes form', 'https://en.wikipedia.org/wiki/Black_hole');
+  const r = OG.extractAnswer(fixtures.wikipedia, 'how do black holes form', 'https://en.wikipedia.org/wiki/Black_hole', '');
   check('returns an answer', !!r);
   check('kind is list', r && r.kind === 'list', r && r.kind);
   check('ordered', r && r.ordered === true);
@@ -76,7 +77,7 @@ group('how-to query -> ordered list');
 
 group('how-to on a recipe page, with a nav list and a sidebar present');
 {
-  const r = OG.extractAnswer(fixtures.recipe, 'how to make cold brew coffee', 'https://example.com/cold-brew');
+  const r = OG.extractAnswer(fixtures.recipe, 'how to make cold brew coffee', 'https://example.com/cold-brew', '');
   check('returns an answer', !!r);
   check('kind is list', r && r.kind === 'list', r && r.kind);
   check('picked the steps, not the nav', r && r.items.length === 5, r && JSON.stringify(r.items));
@@ -85,7 +86,7 @@ group('how-to on a recipe page, with a nav list and a sidebar present');
 
 group('comparison query -> table');
 {
-  const r = OG.extractAnswer(fixtures.wikipedia, 'black hole classes mass radius comparison', 'https://en.wikipedia.org/wiki/Black_hole');
+  const r = OG.extractAnswer(fixtures.wikipedia, 'black hole classes mass radius comparison', 'https://en.wikipedia.org/wiki/Black_hole', '');
   check('returns an answer', !!r);
   check('kind is table', r && r.kind === 'table', r && r.kind);
   check('header row present', r && r.grid[0][0] === 'Class', r && JSON.stringify(r.grid[0]));
@@ -94,17 +95,17 @@ group('comparison query -> table');
 
 group('bails out rather than inventing an answer');
 {
-  const r = OG.extractAnswer(fixtures.thin, 'what is the airspeed velocity of an unladen swallow', 'https://example.com/');
+  const r = OG.extractAnswer(fixtures.thin, 'what is the airspeed velocity of an unladen swallow', 'https://example.com/', '');
   check('returns null on a thin page', r === null, JSON.stringify(r));
 
-  const h = OG.extractAnswer(fixtures.hostile, 'why is this blocked', 'https://example.com/');
+  const h = OG.extractAnswer(fixtures.hostile, 'why is this blocked', 'https://example.com/', '');
   check('returns null on an interstitial', h === null, JSON.stringify(h));
 }
 
 group('parsing is inert');
 {
   const before = win.pwned;
-  OG.extractAnswer(fixtures.hostile, 'anything', 'https://example.com/');
+  OG.extractAnswer(fixtures.hostile, 'anything', 'https://example.com/', '');
   check('no script from the fetched page ran', !win.pwned && !win.pwned2);
   check('host document title untouched', win.document.title !== 'PWNED', win.document.title);
   check('no state leaked', before === win.pwned);
@@ -114,9 +115,9 @@ group('malformed input does not throw');
 {
   let threw = false;
   try {
-    OG.extractAnswer('<html><body><p>', 'x', 'https://example.com/');
-    OG.extractAnswer('', '', 'not a url');
-    OG.extractAnswer('<<<>>>', 'a b c', 'https://example.com/');
+    OG.extractAnswer('<html><body><p>', 'x', 'https://example.com/', '');
+    OG.extractAnswer('', '', 'not a url', '');
+    OG.extractAnswer('<<<>>>', 'a b c', 'https://example.com/', '');
   } catch (err) {
     threw = true;
     console.log('    threw: ' + err);
@@ -126,14 +127,14 @@ group('malformed input does not throw');
 
 group('inflected forms match (query "gazelles eat" vs page "gazelle eats")');
 {
-  const r = OG.extractAnswer(fixtures.contentFarm, 'what do gazelles eat', 'https://example.com/');
+  const r = OG.extractAnswer(fixtures.contentFarm, 'what do gazelles eat', 'https://example.com/', '');
   check('finds an answer at all', !!r);
   check('it is a paragraph', r && r.kind === 'paragraph', r && r.kind);
 }
 
 group('the intro preamble never wins');
 {
-  const r = OG.extractAnswer(fixtures.contentFarm, 'what do gazelles eat', 'https://example.com/');
+  const r = OG.extractAnswer(fixtures.contentFarm, 'what do gazelles eat', 'https://example.com/', '');
   check('does not quote "In this article we\'ll explore..."', r && !/In this article/.test(r.text), r && r.text.slice(0, 70));
   check('does not quote "Before we get to..."', r && !/Before we get to/.test(r.text), r && r.text.slice(0, 70));
   check('picks the passage that answers it', r && /eats grasses, shoots, herbs/.test(r.text), r && r.text.slice(0, 80));
@@ -152,7 +153,7 @@ group("Google's own description is used as the anchor");
   // passage the keyword scoring would NOT have chosen and check it wins anyway.
   const elsewhere = 'Cheetahs, lions and wild dogs all hunt gazelle across the open savannah ...';
   const steered = OG.extractAnswer(fixtures.contentFarm, 'gazelle', 'https://example.com/', elsewhere);
-  const unsteered = OG.extractAnswer(fixtures.contentFarm, 'gazelle', 'https://example.com/');
+  const unsteered = OG.extractAnswer(fixtures.contentFarm, 'gazelle', 'https://example.com/', '');
   check('scoring alone picks the diet passage', unsteered && /eats grasses/.test(unsteered.text), unsteered && unsteered.text.slice(0, 50));
   check("Google's pick overrides it", steered && /Cheetahs, lions and wild dogs/.test(steered.text), steered && steered.text.slice(0, 50));
 }

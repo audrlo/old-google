@@ -54,7 +54,7 @@ check('empty input yields nothing', eq(tok.basicTokenize('   '), []), tok.basicT
 
 console.log('\npair encoding for a cross-encoder');
 {
-  const p = tok.encodePair('what do gazelles eat', 'Their diet consists of grasses.');
+  const p = tok.encodePair('what do gazelles eat', 'Their diet consists of grasses.', 256);
   check('starts with [CLS]', p.inputIds[0] === tok.CLS);
   check('ends with [SEP]', p.inputIds[p.inputIds.length - 1] === tok.SEP);
   check('exactly two [SEP] separators', p.inputIds.filter((id) => id === tok.SEP).length === 2);
@@ -85,8 +85,8 @@ console.log('\ntruncation');
 console.log('\nbatch padding');
 {
   const batch = tok.padBatch([
-    tok.encodePair('a', 'short'),
-    tok.encodePair('a', 'a considerably longer passage than the other one here'),
+    tok.encodePair('a', 'short', 256),
+    tok.encodePair('a', 'a considerably longer passage than the other one here', 256),
   ]);
   const [n, width] = batch.dims;
   check('dims are [rows, width]', n === 2 && width > 5, batch.dims);

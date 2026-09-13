@@ -37,16 +37,12 @@
     if (!cond) throw new Error('dictionary: ' + msg);
   }
 
-  OG.dictionaryPending = false;
-  OG.dictionaryActive = false;
-
   /**
    * @returns {null | {word: string, mode: 'define'|'synonym', opposite: boolean}}
    * opposite is set for antonym queries, which lead with the opposite words.
    */
   OG.dictionaryTarget = function (raw) {
-    const q = (raw || '').trim().toLowerCase().replace(/[?!.]+$/, '');
-    if (!q) return null;
+    const q = raw.trim().toLowerCase().replace(/[?!.]+$/, '');
 
     const patterns = [
       [/^(?:define|defn)\s+(.+)$/, 'define'],
@@ -70,14 +66,7 @@
 
   /* ------------------------------ sources --------------------------- */
 
-  function fetchJson(url, headers) {
-    return new Promise((resolve) => {
-      chrome.runtime.sendMessage({ type: 'og:fetchJson', url, headers }, (res) => {
-        if (chrome.runtime.lastError) return resolve({ ok: false, error: chrome.runtime.lastError.message });
-        resolve(res);
-      });
-    });
-  }
+  const fetchJson = (url, headers) => OG.ask({ type: 'og:fetchJson', url, headers }, 12000);
 
   /** Wiktionary and Oxford hand back HTML; only its text is ever used. */
   function text(html) {
@@ -162,7 +151,7 @@
     return {
       word,
       phonetic: pron ? '/' + pron.phoneticSpelling + '/' : '',
-      audio: pron && pron.audioFile ? pron.audioFile : '',
+      audio: pron?.audioFile ?? '',
       blocks,
       credit: 'Definitions from Oxford Languages',
     };
@@ -222,9 +211,9 @@
 
   function shapeFree(word, defs, meta) {
     const hit = meta.ok && meta.data.length ? meta.data[0] : null; // Datamuse knows most words, not all
-    const blocks = defs.ok ? blocksFromWiktionary(defs.data) : hit && hit.defs ? blocksFromDatamuse(hit) : [];
+    const blocks = defs.ok ? blocksFromWiktionary(defs.data) : hit?.defs ? blocksFromDatamuse(hit) : [];
     assert(blocks.length, 'no definitions for ' + word);
-    const pron = hit && hit.tags ? hit.tags.find((t) => t.startsWith('pron:')) : null;
+    const pron = hit?.tags?.find((t) => t.startsWith('pron:'));
     return {
       word,
       phonetic: pron ? respell(pron.slice(5)) : '',
@@ -265,7 +254,7 @@
     if (!words.length) row.remove();
     else {
       const chips = row.querySelector('.og-dict-chips');
-      for (const w of words) chips.appendChild(chip(w));
+      chips.append(...words.map(chip));
       chips.classList.add('og-dict-filled');
       clamp(chips);
     }
@@ -385,9 +374,9 @@
   OG.renderDictionary = render; // for the tests
 
   function mount(panel) {
-    const rso = document.getElementById('rso') || document.getElementById('center_col');
-    if (!rso) return;
-    rso.insertBefore(panel, rso.firstChild); // where the featured snippet would go
+    const column = OG.column();
+    if (!column) return;
+    column.insertBefore(panel, column.firstChild); // where the featured snippet would go
     for (const chips of panel.querySelectorAll('.og-dict-chips')) clamp(chips);
     showMore(panel);
   }
@@ -403,7 +392,9 @@
 
   /* ------------------------------ driver ---------------------------- */
 
-  const state = { key: null, status: 'idle', panel: null }; // status: idle | pending | done | failed
+  // status: idle (no dictionary query) | pending | done | failed. The snippet
+  // module reads it: a card in flight or showing takes the snippet's place.
+  const state = (OG.dictionary = { key: null, status: 'idle', panel: null });
 
   OG.ensureDictionary = function () {
     const target = OG.settings.dictionary && OG.isResultsPage() && OG.isWebTab() ? OG.dictionaryTarget(OG.query()) : null;
@@ -413,10 +404,7 @@
       state.key = key;
       state.status = 'idle';
       state.panel = null;
-      OG.dictionaryActive = false;
-      OG.dictionaryPending = !!target;
-      const old = document.getElementById('og-dictionary');
-      if (old) old.remove();
+      document.getElementById('og-dictionary')?.remove();
     }
     hideGoogleBox(!!target && state.status !== 'failed');
     if (!target) return;
@@ -433,24 +421,19 @@
     s.entry
       .then((entry) => {
         if (state.key !== key) return;
-        const panel = render(target, entry);
         state.status = 'done';
-        state.panel = panel;
-        OG.dictionaryPending = false;
-        OG.dictionaryActive = true;
-        mount(panel);
+        state.panel = render(target, entry);
+        mount(state.panel);
         // 2020 showed the card instead of a snippet for these queries.
-        const card = document.getElementById('og-featured');
-        if (card) card.remove();
+        document.getElementById('og-featured')?.remove();
         for (const kind of ['similar', 'opposite']) {
-          s[kind].then((words) => fill(panel.querySelector('.og-dict-' + kind), words));
+          s[kind].then((words) => fill(state.panel.querySelector('.og-dict-' + kind), words));
         }
         OG.log('dictionary card for', target.word, target.mode);
       })
       .catch((err) => {
         if (state.key !== key) return;
         state.status = 'failed';
-        OG.dictionaryPending = false;
         hideGoogleBox(false);
         OG.log('no dictionary card for', target.word, err.message);
       });

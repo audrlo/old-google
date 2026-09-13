@@ -129,16 +129,17 @@
   }
 
   function mount(box) {
-    const rso = document.getElementById('rso') || document.getElementById('center_col');
-    if (!rso) return;
-    rso.insertBefore(box, rso.firstChild);
+    const column = OG.column();
+    if (!column) return;
+    column.insertBefore(box, column.firstChild);
   }
 
   /* ------------------------------ driver ---------------------------- */
 
-  let table = null; // fetched once per page
-  const state = { key: null, box: null };
-  OG.emojiActive = false; // 30-snippet.js holds the featured snippet back while this is set
+  let table = null; // Promise of the table, fetched once per page
+  // key is set while the query is an emoji query; 30-snippet.js holds the
+  // featured snippet back while it is.
+  const state = (OG.emoji = { key: null, box: null });
 
   OG.ensureEmoji = function () {
     const target = OG.isResultsPage() && OG.isWebTab() ? OG.emojiTarget(OG.query()) : null;
@@ -147,20 +148,20 @@
     if (state.key !== key) {
       state.key = key;
       state.box = null;
-      const old = document.getElementById('og-emoji');
-      if (old) old.remove();
+      document.getElementById('og-emoji')?.remove();
     }
-    OG.emojiActive = !!target;
     if (!target) return;
     if (state.box) {
       if (!state.box.isConnected) mount(state.box); // Google re-rendered the column
       return;
     }
-    const ready = table ? Promise.resolve(table) : new Promise((resolve) => chrome.runtime.sendMessage({ type: 'og:emojiTable' }, resolve));
-    ready.then((t) => {
-      table = t;
+    table ??= OG.ask({ type: 'og:emojiTable' }, 10000).then((res) => {
+      if (!res.ok) throw new Error('emoji table: ' + res.error);
+      return res.table;
+    });
+    table.then((t) => {
       if (state.key !== key || state.box) return;
-      const matches = OG.emojiMatches(target, table);
+      const matches = OG.emojiMatches(target, t);
       if (!matches.length) return;
       state.box = render(matches);
       mount(state.box);

@@ -21,10 +21,6 @@ const DEFAULTS = {
 const CHECKBOXES = ['theme', 'hideAI', 'hideAds', 'followDark', 'pagination', 'hideFooter', 'greenUrls', 'debug', 'preferWikipedia', 'dictionary', 'rerank', 'oxfordSandbox'];
 const TEXTAREAS = ['extraHideSelectors', 'customCss', 'oxfordAppId', 'oxfordAppKey'];
 
-function area() {
-  return chrome.storage.sync || chrome.storage.local;
-}
-
 let statusTimer = null;
 function flash(msg) {
   const node = document.getElementById('status');
@@ -36,19 +32,17 @@ function flash(msg) {
 }
 
 function paint(settings) {
-  for (const key of CHECKBOXES) document.getElementById(key).checked = !!settings[key];
-  for (const key of TEXTAREAS) document.getElementById(key).value = settings[key] || '';
-  const radio = document.querySelector(`input[name="snippetMode"][value="${settings.snippetMode}"]`);
-  if (radio) radio.checked = true;
+  for (const key of CHECKBOXES) document.getElementById(key).checked = settings[key];
+  for (const key of TEXTAREAS) document.getElementById(key).value = settings[key];
+  document.querySelector(`input[name="snippetMode"][value="${settings.snippetMode}"]`).checked = true;
   syncDisabled(settings);
 }
 
 function syncDisabled(settings) {
-  const themeOn = !!settings.theme;
   for (const key of ['followDark', 'greenUrls', 'pagination']) {
     const input = document.getElementById(key);
-    input.disabled = !themeOn;
-    input.closest('.row').style.opacity = themeOn ? '1' : '0.45';
+    input.disabled = !settings.theme;
+    input.closest('.row').style.opacity = settings.theme ? '1' : '0.45';
   }
   const wiki = document.getElementById('preferWikipedia');
   const synth = settings.snippetMode === 'synthesize';
@@ -57,18 +51,13 @@ function syncDisabled(settings) {
 }
 
 async function save(patch) {
-  await area().set(patch);
-  const current = await area().get(DEFAULTS);
-  syncDisabled(Object.assign({}, DEFAULTS, current));
+  await chrome.storage.sync.set(patch);
+  syncDisabled(await chrome.storage.sync.get(DEFAULTS));
   flash('Saved');
 }
 
 async function init() {
-  let settings = DEFAULTS;
-  try {
-    settings = Object.assign({}, DEFAULTS, await area().get(DEFAULTS));
-  } catch (_) {}
-  paint(settings);
+  paint(await chrome.storage.sync.get(DEFAULTS));
 
   for (const key of CHECKBOXES) {
     document.getElementById(key).addEventListener('change', (e) => save({ [key]: e.target.checked }));
@@ -87,7 +76,7 @@ async function init() {
     });
   }
   document.getElementById('reset').addEventListener('click', async () => {
-    await area().set(DEFAULTS);
+    await chrome.storage.sync.set(DEFAULTS);
     paint(DEFAULTS);
     flash('Reset');
   });

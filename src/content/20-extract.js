@@ -55,19 +55,16 @@
   }
 
   function words(text) {
-    return (text || '').toLowerCase().split(/[^a-z0-9'-]+/).filter(Boolean);
+    return text.toLowerCase().split(/[^a-z0-9'-]+/).filter(Boolean);
   }
 
   function terms(query) {
-    const out = [];
-    for (const w of words(query)) {
-      if (w.length > 2 && !STOPWORDS.has(w)) out.push(stem(w));
-    }
-    return Array.from(new Set(out));
+    const kept = words(query).filter((w) => w.length > 2 && !STOPWORDS.has(w));
+    return Array.from(new Set(kept.map(stem)));
   }
 
   function clean(text) {
-    return (text || '')
+    return text
       .replace(/\[\d+\]/g, '')       // wikipedia citation markers
       .replace(/\[(edit|citation needed)\]/gi, '')
       .replace(/\s+/g, ' ')
@@ -77,9 +74,7 @@
   function coverage(text, ts) {
     if (!ts.length) return 0;
     const stems = new Set(words(text).map(stem));
-    let hit = 0;
-    for (const t of ts) if (stems.has(t)) hit++;
-    return hit / ts.length;
+    return ts.filter((t) => stems.has(t)).length / ts.length;
   }
 
   /** Best single sentence in a passage, so one strong sentence beats diffuse mentions. */
@@ -103,7 +98,6 @@
    * actually worked than any keyword score.
    */
   function anchorProbe(description) {
-    if (!description) return '';
     const fragments = description
       .split(/\.\.\.|…|\u00a0/)
       .map((f) => f.replace(/\s+/g, ' ').trim())
@@ -114,7 +108,7 @@
   }
 
   function normalizeForMatch(text) {
-    return (text || '').toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
+    return text.toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
   }
 
   function nearestHeading(node) {
@@ -156,10 +150,8 @@
 
   function pageTitle(doc) {
     const og = doc.querySelector('meta[property="og:title"]');
-    if (og && og.content) return clean(og.content);
-    const h1 = doc.querySelector('h1');
-    if (h1) return clean(h1.textContent);
-    return clean(doc.title);
+    if (og?.content) return clean(og.content);
+    return clean(doc.querySelector('h1')?.textContent ?? doc.title);
   }
 
   /* ---------------------------- paragraphs -------------------------- */
@@ -312,18 +304,12 @@
    * Parse and score a page, without choosing yet — so the QA model can reorder
    * the paragraph candidates before selection.
    *
-   * @param {string} [anchor] Google's own description for this result: its
-   *        passage selection for this query.
-   * @returns {null|{title, url, ts, paragraphs, lists, tables}}
+   * @param {string} anchor Google's own description for this result: its
+   *        passage selection for this query. '' when Google showed none.
+   * @returns {{title, url, ts, paragraphs, lists, tables}}
    */
   OG.analyzePage = function (html, query, url, anchor) {
-    let doc;
-    try {
-      doc = buildDoc(html);
-    } catch (err) {
-      OG.log('parse failed', err);
-      return null;
-    }
+    const doc = buildDoc(html);
     const ts = terms(query);
     const root = findRoot(doc);
     return {
@@ -345,16 +331,13 @@
    *                 heading?, grid?, title, url, confidence}}
    */
   OG.selectAnswer = function (analysis) {
-    if (!analysis) return null;
     const { paragraphs, lists, tables, title, url, ts } = analysis;
-
-    const bestP = paragraphs[0];
-    const bestL = lists[0];
-    const bestT = tables[0];
-
-    const pScore = bestP ? bestP.score : -1;
-    const lScore = bestL ? bestL.score : -1;
-    const tScore = bestT ? bestT.score : -1;
+    const [bestP] = paragraphs;
+    const [bestL] = lists;
+    const [bestT] = tables;
+    const pScore = bestP?.score ?? -1;
+    const lScore = bestL?.score ?? -1;
+    const tScore = bestT?.score ?? -1;
 
     if (lScore > pScore + 10 && lScore > tScore) {
       return {
@@ -377,7 +360,7 @@
         confidence: Math.min(1, tScore / 120),
       };
     }
-    if (bestP && pScore > 25) {
+    if (pScore > 25) {
       let text = bestP.text;
       // Trim to a sentence boundary near 340 chars, the way Google used to.
       if (text.length > 360) {
@@ -401,6 +384,4 @@
   OG.extractAnswer = function (html, query, url, anchor) {
     return OG.selectAnswer(OG.analyzePage(html, query, url, anchor));
   };
-
-  OG._terms = terms; // exposed for the demo page / debugging
 })();

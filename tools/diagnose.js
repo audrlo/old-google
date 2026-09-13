@@ -22,7 +22,7 @@ if (!fs.existsSync(input)) {
 }
 
 const CSS = ['hide-ai.css', 'theme-2020.css', 'snippet.css'];
-const JS = ['00-state.js', '10-purge.js', '20-extract.js', '30-snippet.js', '40-theme.js'];
+const JS = ['00-state.js', '10-purge.js', '20-extract.js', '25-dictionary.js', '27-emoji.js', '30-snippet.js', '40-theme.js'];
 
 let html = fs.readFileSync(input, 'utf8');
 // Inert: no Google JS runs, nothing is fetched, the DOM stays exactly as captured.
