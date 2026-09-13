@@ -17,7 +17,7 @@ To bring back the old previews, it extracts the page of the top result, score it
    cd old-google
    ```
 
-2. Fetch the model that ranks the preview passages. It is about 200 MB, so it is downloaded rather than kept in the repository:
+2. Fetch the model that ranks the preview passages. It's about 200 MB :)
 
    ```sh
    ./tools/fetch-model.sh
