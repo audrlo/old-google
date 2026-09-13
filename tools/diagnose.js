@@ -3,7 +3,7 @@
  * Run the extension against a REAL saved Google results page.
  *
  * Google serves a CAPTCHA to automated browsers, so the live DOM has to be
- * captured by hand (see README, "Capturing a real SERP"). This takes that saved
+ * captured by hand: save the results page from DevTools as demo/live-serp.html. This takes that saved
  * file, strips its scripts so nothing phones home or re-renders, injects the
  * extension exactly as Chrome would, and reports what actually matched.
  *
@@ -17,7 +17,7 @@ const { chromium } = require('../test/node_modules/playwright');
 const ROOT = path.join(__dirname, '..');
 const input = process.argv[2] || path.join(ROOT, 'demo', 'live-serp.html');
 if (!fs.existsSync(input)) {
-  console.error('No such file: ' + input + '\nSee README → "Capturing a real SERP".');
+  console.error('No such file: ' + input + '\nSave a Google results page from DevTools as demo/live-serp.html first.');
   process.exit(1);
 }
 

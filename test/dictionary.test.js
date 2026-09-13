@@ -106,10 +106,9 @@ console.log('\nrendering');
     panel.querySelector('.og-dict-block .og-dict-opposite .og-dict-label').textContent === 'Opposite:');
   check('a lone sense goes unnumbered, several are numbered',
     !panel.querySelectorAll('.og-dict-senses')[0].classList.contains('og-dict-single') && panel.querySelectorAll('.og-dict-senses')[1].classList.contains('og-dict-single'));
-  check('attribution line under the heading, with a Learn more link',
+  check('attribution line under the heading',
     panel.querySelector('.og-dict-heading').nextElementSibling.classList.contains('og-dict-credit') &&
-    panel.querySelector('.og-dict-credit').textContent === 'Definitions from Wiktionary · Synonyms from Datamuse · Learn more' &&
-    panel.querySelector('.og-dict-credit a').href === 'https://github.com/audrlo/old-google#dictionary');
+    panel.querySelector('.og-dict-credit').textContent === 'Definitions from Wiktionary · Synonyms from Datamuse');
   check('credited once, not again at the bottom', panel.querySelectorAll('.og-dict-credit').length === 1 && !panel.querySelector('.og-dict-foot .og-dict-credit'));
   check('no search row', !panel.querySelector('.og-dict-search, input'));
   check('feedback link', panel.querySelector('.og-dict-feedback').href.includes('github.com/audrlo/old-google/issues'));
@@ -176,7 +175,7 @@ async function open(browser, qs, dark) {
         snippetSuppressed: !document.getElementById('og-featured'),
         googleBoxHidden: !document.getElementById('google-dict-box').checkVisibility(),
         heading: px('.og-dict-heading', 'fontSize') + '/' + px('.og-dict-heading', 'lineHeight'),
-        credit: d.querySelector('.og-dict-credit').textContent + ' ' + px('.og-dict-credit', 'fontSize') + ' ' + px('.og-dict-credit a', 'textDecorationLine'),
+        credit: d.querySelector('.og-dict-credit').textContent + ' ' + px('.og-dict-credit', 'fontSize'),
         searchRow: !!d.querySelector('.og-dict-search, input'),
         speaker: [px('.og-dict-speak', 'width'), px('.og-dict-speak span', 'width'), px('.og-dict-speak span', 'borderTopLeftRadius'), px('.og-dict-speak span', 'backgroundColor'), px('.og-dict-speak svg', 'fill'), px('.og-dict-speak svg', 'width')].join(' '),
         wordSize: px('.og-dict-word', 'fontSize') + '/' + px('.og-dict-word', 'lineHeight'),
@@ -213,7 +212,7 @@ async function open(browser, qs, dark) {
     check('featured snippet suppressed for a definition query', r.snippetSuppressed);
     check("Google's own dictionary box is hidden", r.googleBoxHidden);
     check('"Dictionary" heading at 22px/28px', r.heading === '22px/28px', r.heading);
-    check('attribution line at 12px with an underlined Learn more', r.credit === 'Definitions from Wiktionary · Synonyms from Datamuse · Learn more 12px underline', r.credit);
+    check('attribution line at 12px', r.credit === 'Definitions from Wiktionary · Synonyms from Datamuse 12px', r.credit);
     check('no search row', !r.searchRow);
     check('36px speaker button holding a filled 34px #4285f4 circle and a white 22px glyph', r.speaker === '36px 34px 50% rgb(66, 133, 244) rgb(255, 255, 255) 22px', r.speaker);
     check('word at 28px/36px', r.wordSize === '28px/36px', r.wordSize);
@@ -285,7 +284,7 @@ async function open(browser, qs, dark) {
     });
     check('synonym variant', /og-dict-synonym/.test(r.variant), r.variant);
     check('"Similar and opposite words" heading at 14px #5e5e5e', r.heading === 'Similar and opposite words 14px rgb(94, 94, 94)', r.heading);
-    check('attribution line at the top', r.credit === 'Definitions from Wiktionary · Synonyms from Datamuse · Learn more', r.credit);
+    check('attribution line at the top', r.credit === 'Definitions from Wiktionary · Synonyms from Datamuse', r.credit);
     check('word at 28px/36px', r.word === 'marvelous 28px/36px', r.word);
     check('italic #5e5e5e part of speech', r.pos === 'italic rgb(94, 94, 94)', r.pos);
     check('one short definition, no example', /Exciting wonder or surprise/.test(r.def) && r.noExample, r.def);

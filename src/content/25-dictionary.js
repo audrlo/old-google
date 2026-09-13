@@ -8,7 +8,6 @@
     sandbox: 'https://od-api-sandbox.oxforddictionaries.com/api/v2/',
   };
   const FEEDBACK = 'https://github.com/audrlo/old-google/issues';
-  const LEARN_MORE = 'https://github.com/audrlo/old-google#dictionary';
   const WORD = /^[a-z][a-z'’-]{1,23}(?: [a-z'’-]{2,23})?$/i;
   const SHOWN = 2; // senses per part of speech, and parts of speech, before "more definitions"
 
@@ -254,11 +253,7 @@
   }
 
   function credit(entry) {
-    return OG.el('div', { class: 'og-dict-credit' }, [
-      OG.el('span', { text: entry.credit }),
-      ' · ',
-      OG.el('a', { href: LEARN_MORE, rel: 'noopener', text: 'Learn more' }),
-    ]);
+    return OG.el('div', { class: 'og-dict-credit' }, [OG.el('span', { text: entry.credit })]);
   }
 
   function foot(panel, more) {

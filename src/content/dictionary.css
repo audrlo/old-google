@@ -54,10 +54,6 @@
   line-height: 16px;
   color: var(--og-dict-credit);
 }
-.og-dict-credit a {
-  color: var(--og-text);
-  text-decoration: underline;
-}
 
 /* --- headword ----------------------------------------------------------- */
 

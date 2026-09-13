@@ -1,5 +1,7 @@
 # Old Google by Audrey Lo
 
+![Old Google on a results page](demo/preview.png)
+
 If you hate the AI overviews in Google as much as I do, I made a Chrome extension that removes them. It also does some other cool things:
 
 - Brings back the dictionary and synonym previews
