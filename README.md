@@ -6,7 +6,7 @@ If you hate the AI overviews in Google as much as I do, I made a Chrome extensio
 - Expands the emoji picker so looking up "crying emoji" lets you copy it
 - Removes sponsored results
 
-To bring back the old previews, we extract the page of the top result, score its paragraphs with a small local model and shows the best one, so no content is generated and nothing leaves your machine. I use DistilBERT base uncased, distilled on SQuAD 1.1 for extractive question answering.
+To bring back the old previews, it extracts the page of the top result, score its paragraphs with a small local model (DistilBERT base uncased, distilled on SQuAD 1.1 for extractive question answering) and shows the best one, so no content is generated and nothing leaves your machine.
 
 ## Installation
 
