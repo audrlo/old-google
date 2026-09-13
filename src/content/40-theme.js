@@ -113,12 +113,14 @@
       if (h3.closest('#og-featured')) continue;
       const link = h3.closest('a[href]');
       if (!link) continue;
-      h3.classList.add('og-title');
-      link.classList.add('og-title-link');
       const block = h3.closest('div.g, div.MjjYud, div[data-hveid]');
       if (!block) continue;
+      const cite = block.querySelector('cite');
+      if (!cite) continue; // shopping/product cards also use linked h3 headings
+      h3.classList.add('og-title');
+      link.classList.add('og-title-link');
       block.classList.add('og-result');
-      block.querySelector('cite')?.classList.add('og-cite');
+      cite.classList.add('og-cite');
       collapseSiteHeader(block);
       stripFaviconChrome(block);
       block.querySelector('.VwiC3b, [data-sncf], [data-snf], .lyLwlc')?.classList.add('og-snippet');

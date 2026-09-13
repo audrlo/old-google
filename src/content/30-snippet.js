@@ -49,10 +49,10 @@
       const url = a && externalHref(a);
       if (!url) continue;
       const host = new URL(url).hostname;
+      const block = h3.closest('div.g, div.MjjYud, div[data-hveid]') || h3.parentElement;
+      if (!block.querySelector('cite')) continue; // skip shopping/product cards
       if (seen.has(host)) continue;
       seen.add(host);
-
-      const block = h3.closest('div.g, div.MjjYud, div[data-hveid]') || h3.parentElement;
       const fav = block.querySelector('img[src*="favicon"], img[src^="data:image"], .XNo5Ab, .eqA2re img');
       out.push({
         url,

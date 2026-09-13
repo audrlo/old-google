@@ -171,6 +171,9 @@ html.og-2020.og-web #center_col {
 }
 
 html.og-2020 #rso {
+  display: block !important;
+  width: 100% !important;
+  min-width: 0 !important;
   padding: 0 !important;
   margin: 0 !important;
 }
