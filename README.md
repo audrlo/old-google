@@ -1,16 +1,12 @@
 # Old Google by Audrey Lo
 
----
-
 If you hate the AI overviews in Google as much as I do, I made a Chrome extension that removes them. It also does some other cool things:
 
 - Brings back the dictionary and synonym previews
 - Expands the emoji picker so looking up "crying emoji" lets you copy it
 - Removes sponsored results
 
----
-
-The preview at the top of the results is a real featured snippet again: one passage quoted verbatim from one website, with that site's name and link underneath. The extension fetches the top result's page, scores its paragraphs, lists and tables against your query with a small local question-answering model, and shows the best one, so nothing is generated and nothing leaves your machine.
+To bring back the old previews, we extract the page of the top result, score its paragraphs with a small local model and shows the best one, so no content is generated and nothing leaves your machine. I use DistilBERT base uncased, distilled on SQuAD 1.1 for extractive question answering.
 
 ## Installation
 
