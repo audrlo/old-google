@@ -8,6 +8,8 @@ If you hate the AI overviews in Google as much as I do, I made a Chrome extensio
 
 To bring back the old previews, it extracts the page of the top result, score its paragraphs with a small local model (DistilBERT base uncased, distilled on SQuAD 1.1 for extractive question answering) and shows the best one, so no content is generated and nothing leaves your machine.
 
+If you're curious, you can also experiment w/ a full-size BERT SQuAD model. It scored slightly higher on my internal benchmark but it was pretty slow :(
+
 ## Installation
 
 1. Clone this repository:
