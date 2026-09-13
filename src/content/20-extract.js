@@ -1,13 +1,3 @@
-/* Old Google (2020) — featured-snippet extraction.
- *
- * Given the raw HTML of ONE source page and the user's query, pick the passage a
- * 2020-era featured snippet would have quoted: a paragraph, an ordered/unordered
- * list, or a small table — taken verbatim, never paraphrased, never merged
- * across sites.
- *
- * The HTML is parsed with DOMParser into an inert document: no scripts run, no
- * subresources load. Only textContent ever reaches the real page.
- */
 (() => {
   const OG = window.OG;
 
@@ -37,12 +27,6 @@
     '.content', '#main',
   ];
 
-  /**
-   * Crude suffix stripping. Without it "what do gazelles eat" never matches a
-   * page that says "the gazelle eats" — exact substring matching made the
-   * scorer blind to every inflected form, which is a large part of why it
-   * picked poorly.
-   */
   function stem(word) {
     let w = word.toLowerCase().replace(/[^a-z0-9'-]/g, '');
     if (w.length <= 3) return w;
@@ -77,7 +61,6 @@
     return ts.filter((t) => stems.has(t)).length / ts.length;
   }
 
-  /** Best single sentence in a passage, so one strong sentence beats diffuse mentions. */
   function bestSentenceCoverage(text, ts) {
     const parts = text.match(/[^.!?]+[.!?]*/g) || [text];
     let best = 0;
@@ -90,13 +73,6 @@
 
   const PREAMBLE = /(in this (article|post|guide|blog)|we(?:'|’)?ll (explore|look|cover|discuss)|keep reading|read on|let(?:'|’)?s (dive|take a look)|table of contents|in this section|before we (get to|dive|begin)|it helps to know|first,? a little)/i;
 
-  /**
-   * Google's own one-line description under a result is its passage selection
-   * for this exact query — already the thing we are trying to reproduce, just
-   * truncated with an ellipsis. Locating it in the source page and returning
-   * the full sentences around it is far closer to how featured snippets
-   * actually worked than any keyword score.
-   */
   function anchorProbe(description) {
     const fragments = description
       .split(/\.\.\.|…|\u00a0/)
@@ -116,9 +92,6 @@
     for (let i = 0; i < 30 && cur; i++) {
       let sib = cur.previousElementSibling;
       while (sib) {
-        // H2-H6 only. The H1 is the page title: on any page that ranks for the
-        // query it matches the query, so counting it rewards every paragraph
-        // near the top equally and tells us nothing about which one answers.
         if (/^H[2-6]$/.test(sib.tagName)) return clean(sib.textContent);
         if (sib.tagName === 'H1') return '';
         sib = sib.previousElementSibling;
@@ -128,13 +101,7 @@
     return '';
   }
 
-  /* ------------------------------------------------------------------ */
-
   function buildDoc(html) {
-    // A <base href> in the fetched page makes the parser try to set the
-    // document's base URI, which the extension's CSP blocks and logs as an
-    // error on the Extensions page. Drop it before parsing; nothing here
-    // resolves relative URLs against it.
     const doc = new DOMParser().parseFromString(html.replace(/<base\b[^>]*>/gi, ''), 'text/html');
     for (const node of Array.from(doc.querySelectorAll(STRIP))) node.remove();
     return doc;
@@ -154,8 +121,6 @@
     return clean(doc.querySelector('h1')?.textContent ?? doc.title);
   }
 
-  /* ---------------------------- paragraphs -------------------------- */
-
   function scoreParagraphs(root, ts, query, anchor) {
     const nodes = Array.from(root.querySelectorAll('p, dd, blockquote, li'));
     const scored = [];
@@ -169,38 +134,25 @@
       if (BOILERPLATE.test(text)) return;
       if (!/[.!?]/.test(text)) return; // needs to read like prose
 
-      // A passage is judged by its best sentence as well as its whole, so one
-      // sentence that answers the question beats a paragraph that merely
-      // repeats the query words throughout.
       const whole = coverage(text, ts);
       const best = bestSentenceCoverage(text, ts);
       let score = Math.max(whole, best * 1.1) * 100;
 
       if (phrase.length > 8 && text.toLowerCase().includes(phrase)) score += 45;
 
-      // The decisive signal when we have it: this is the passage Google itself
-      // surfaced for this query.
       const anchored = !!(probe && normalizeForMatch(text).includes(probe));
       if (anchored) score += 130;
 
-      // 2020 snippets ran roughly 40–50 words.
       score -= Math.min(35, Math.abs(text.length - 220) / 12);
 
-      // A weak nudge only. This used to be worth +22 and decayed slowly, which
-      // handed the snippet to whatever preamble opened the article.
       score += Math.max(0, 8 - index * 1.5);
 
       const heading = nearestHeading(node);
       if (heading) score += coverage(heading, ts) * 45;
 
-      // "In this article we'll explore..." is never the answer. This has to be
-      // decisive: such a paragraph is usually stuffed with the query words and
-      // otherwise scores well on every other signal.
       if (PREAMBLE.test(text)) {
         score -= 90;
       } else if (/^[A-Z][^.]{2,60}\s(is|are|was|were|refers to|means|describes)\s/.test(text)) {
-        // Definitional openings ("X is a…", "X refers to…") read like answers,
-        // but only in a paragraph that is not itself throat-clearing.
         score += 18;
       }
 
@@ -210,8 +162,6 @@
     scored.sort((a, b) => b.score - a.score);
     return scored;
   }
-
-  /* ------------------------------- lists ---------------------------- */
 
   function scoreLists(root, ts, query) {
     const lists = Array.from(root.querySelectorAll('ol, ul'));
@@ -225,7 +175,6 @@
         .map((li) => clean(li.textContent))
         .filter((t) => t.length > 3 && t.length < 220 && !BOILERPLATE.test(t));
       if (items.length < 3 || items.length > 12) return;
-      // A nav menu masquerading as a list: mostly 1–2 word entries.
       const avg = items.reduce((s, t) => s + t.length, 0) / items.length;
       if (avg < 18) return;
 
@@ -249,8 +198,6 @@
     return scored;
   }
 
-  /* ------------------------------ tables ---------------------------- */
-
   function scoreTables(root, ts, query) {
     const scored = [];
     const wantsTable = TABLE_INTENT.test(query);
@@ -269,8 +216,6 @@
       let score = coverage(flat, ts) * 60;
       const caption = table.querySelector('caption');
       const heading = caption ? clean(caption.textContent) : nearestHeading(table);
-      // A caption or heading that matches the query is the strongest signal a
-      // table is the answer: it is what the table claims to be about.
       if (heading) score += coverage(heading, ts) * (caption ? 70 : 50);
       if (wantsTable) score += 55;
       score += Math.max(0, 10 - index * 4);
@@ -280,9 +225,6 @@
     return scored;
   }
 
-  /* --------------------------- highlighting ------------------------- */
-
-  /** 2020 snippets bolded the sentence that actually answered the question. */
   function pickBoldRange(text, ts) {
     if (!ts.length) return null;
     const parts = text.match(/[^.!?]+[.!?]*/g) || [text];
@@ -298,16 +240,6 @@
     return { start: best.start, end: best.end };
   }
 
-  /* ------------------------------ public ---------------------------- */
-
-  /**
-   * Parse and score a page, without choosing yet — so the QA model can reorder
-   * the paragraph candidates before selection.
-   *
-   * @param {string} anchor Google's own description for this result: its
-   *        passage selection for this query. '' when Google showed none.
-   * @returns {{title, url, ts, paragraphs, lists, tables}}
-   */
   OG.analyzePage = function (html, query, url, anchor) {
     const doc = buildDoc(html);
     const ts = terms(query);
@@ -322,14 +254,6 @@
     };
   };
 
-  /**
-   * Turn an analysis into an answer. `analysis.paragraphs` may have been
-   * reordered by the reranker; whichever is first is taken as the best
-   * paragraph candidate.
-   *
-   * @returns {null|{kind:'paragraph'|'list'|'table', text?, bold?, items?, ordered?,
-   *                 heading?, grid?, title, url, confidence}}
-   */
   OG.selectAnswer = function (analysis) {
     const { paragraphs, lists, tables, title, url, ts } = analysis;
     const [bestP] = paragraphs;
@@ -362,7 +286,6 @@
     }
     if (pScore > 25) {
       let text = bestP.text;
-      // Trim to a sentence boundary near 340 chars, the way Google used to.
       if (text.length > 360) {
         const cut = text.slice(0, 360);
         const stop = Math.max(cut.lastIndexOf('. '), cut.lastIndexOf('! '), cut.lastIndexOf('? '));
@@ -380,7 +303,6 @@
     return null;
   };
 
-  /** The original synchronous path: analyse and choose in one go. */
   OG.extractAnswer = function (html, query, url, anchor) {
     return OG.selectAnswer(OG.analyzePage(html, query, url, anchor));
   };

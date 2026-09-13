@@ -1,24 +1,9 @@
-/* Old Google (2020) — the featured snippet box.
- *
- * Order of preference:
- *   1. A real featured snippet Google still served (re-rendered in 2020 dress).
- *   2. A passage extracted from the top organic result's own page.
- *   3. The top result's index description, quoted as-is.
- * In every case the box shows exactly one source, with attribution.
- *
- * Every card is one of three shapes, all with url, host, title, favicon and origin:
- *   {kind: 'paragraph', text, bold: null | {start, end}}
- *   {kind: 'list', heading, ordered, items}
- *   {kind: 'table', heading, grid}
- */
 (() => {
   const OG = window.OG;
 
   const GOOGLE_HOST = /(^|\.)google(\.[a-z]{2,3}){1,2}$/i;
 
   const state = { key: null, status: 'idle', data: null }; // status: idle | pending | done
-
-  /* --------------------------- result harvesting -------------------- */
 
   function isAd(node) {
     return !!node.closest(
@@ -32,7 +17,6 @@
     );
   }
 
-  /** The link's destination if it leaves Google, else null. */
   function externalHref(a) {
     const href = a.getAttribute('href');
     if (href.startsWith('#') || href.startsWith('/')) return null;
@@ -43,15 +27,6 @@
     return u.href;
   }
 
-  /**
-   * The snippet text under a result.
-   *
-   * Taking the first element matching a known class is not safe: those names get
-   * reused on wrapper divs, and matching a wrapper yields the title, site name
-   * and URL run together into one string ("Gazelle Eating HabitsSquaw Mountain
-   * Ranchhttps://..."). So every candidate must look like prose: it may not
-   * contain the title, a cite, or a bare URL.
-   */
   function descriptionFor(block, h3) {
     const looksLikeChrome = (node) => node.contains(h3) || node.querySelector('h3, cite') || /https?:\/\//.test(node.textContent);
     let best = '';
@@ -63,7 +38,6 @@
     return best;
   }
 
-  /** The organic results, in page order. */
   OG.organicResults = function () {
     const out = [];
     const seen = new Set();
@@ -93,7 +67,6 @@
     return out;
   };
 
-  /** A featured snippet Google served itself, if any. */
   OG.googleSnippet = function () {
     const block = document.querySelector(
       '.xpdopen .ifM9O, .g-blk, [data-attrid="wa:/description"], .kp-blk .hgKElc, .c2xzTb'
@@ -115,7 +88,6 @@
       node: block.closest('div[data-hveid], .MjjYud, .g') || block,
     };
 
-    // Ordered list snippets.
     const list = block.querySelector('ol, ul');
     const items = list
       ? Array.from(list.querySelectorAll('li')).map((li) => li.textContent.replace(/\s+/g, ' ').trim()).filter(Boolean).slice(0, 8)
@@ -124,16 +96,10 @@
     return { kind: 'paragraph', text: text.slice(0, 420), bold: null, ...source };
   };
 
-  /** The result's own index description, quoted as a card. */
   function describe(result) {
     return { kind: 'paragraph', text: result.description, bold: null, url: result.url, host: result.host, title: result.title, favicon: result.favicon, origin: 'description' };
   }
 
-  /* ----------------------------- reranking -------------------------- */
-
-  /* How long to wait for the real answer before showing Google's description
-   * as a placeholder. Long enough that a quick answer never causes a visible
-   * swap; short enough that a slow page does not leave a blank box. */
   const STOPGAP_DELAY_MS = 700;
 
   const RERANK_LIMIT = 6;   // passages sent to the model per page
@@ -141,14 +107,6 @@
 
   const clamp01 = (v) => Math.max(0, Math.min(1, v));
 
-  /**
-   * Reorder the paragraph candidates using the local QA model, which answers
-   * "does this passage contain the answer to the query" — the thing keyword
-   * overlap cannot see. Keyword score and Google's own pick still count; the
-   * model is the largest single term but not a dictator.
-   *
-   * Any failure leaves the keyword order untouched.
-   */
   async function rerank(analysis, query) {
     if (!OG.settings.rerank) return;
     const candidates = analysis.paragraphs.slice(0, RERANK_LIMIT);
@@ -198,9 +156,6 @@
         OG.log('fetch failed for', result.host, page.error);
         continue;
       }
-      // Hand the extractor Google's own description for this result: it is
-      // Google's passage pick for this query, and anchoring on it beats any
-      // keyword heuristic we can run locally.
       const analysis = OG.analyzePage(page.html, query, page.finalUrl, result.description);
       await rerank(analysis, query);
       const answer = OG.selectAnswer(analysis);
@@ -212,11 +167,8 @@
       return { ...answer, title: answer.title || result.title, host: result.host, favicon: result.favicon, origin: 'extracted' };
     }
 
-    // Last resort: quote the top result's own index description.
     return results[0].description.length > 60 ? describe(results[0]) : null;
   }
-
-  /* ----------------------------- rendering -------------------------- */
 
   function faviconFor(data) {
     if (data.favicon && /^https?:|^data:/.test(data.favicon)) return data.favicon;
@@ -254,17 +206,8 @@
     description: 'Description from the web',
   };
 
-  /* Google's interactive answer tools — the translate boxes, the calculator,
-   * the weather card — are the whole answer on their own. 2020 showed nothing
-   * above them, and a snippet quoting some translation vendor's landing page
-   * on top of the translate widget is worse than nothing. */
   const TOOL_WIDGETS = '#tw-container, #tw-main, #tw-ob, #cwos, #wob_wc';
 
-  /* The source link carries a text fragment, so the browser scrolls to the
-   * quoted passage and marks it — what clicking a 2020 snippet did. Long
-   * passages become a start,end range on their first and last few words, which
-   * survives the page's own line breaks and inline markup. The directive
-   * syntax reserves "-", which encodeURIComponent leaves alone. */
   const FRAGMENT_WORDS = 6;
   function fragment(text) {
     const words = text.split(/\s+/).filter(Boolean);
@@ -315,36 +258,22 @@
     mount(render(data));
   }
 
-  /**
-   * The real snippet needs a round trip to the source page, which is typically
-   * a few hundred ms but can be seconds on a slow site. Rather than showing
-   * nothing until then, quote the top result's index description immediately —
-   * it needs no network — and swap in the extracted passage when it arrives.
-   */
   function provisional() {
     const top = OG.organicResults()[0];
     if (top.description.length < 60) return null;
-    // Never show the box at all rather than show scraped page furniture.
     if (top.description.includes('://') || top.description.includes(top.title)) return null;
     return describe(top);
   }
 
-  // Exposed for the demo harness in demo/serp.html.
   OG.renderSnippet = render;
   OG.mountSnippet = mount;
 
-  /* ------------------------------ driver ---------------------------- */
-
   OG.ensureSnippet = function () {
     const mode = OG.settings.snippetMode;
-    // 2020 had featured snippets on the web tab only; Videos, Forums and the
-    // rest are lists of one kind of thing, and their column has no gap for it.
-    // A dictionary card or the emoji box is the answer instead, the way 2020 did.
     if (mode === 'off' || !OG.isResultsPage() || !OG.isWebTab() || OG.dictionary.status === 'done' || OG.emoji.key) {
       document.getElementById('og-featured')?.remove();
       return;
     }
-    // Hold off while the dictionary lookup is in flight so the two never flash over each other.
     if (OG.dictionary.status === 'pending') return;
 
     const key = OG.query() + '|' + OG.startIndex() + '|' + mode;
@@ -356,18 +285,15 @@
     }
 
     if (state.status !== 'idle') {
-      // Google re-renders the column often; put the card back if it went with it.
       if (state.data && !document.getElementById('og-featured')) mount(render(state.data));
       return;
     }
 
-    // Google's translate boxes, calculator or weather card are the answer.
     if (document.querySelector(TOOL_WIDGETS)) {
       state.status = 'done';
       return;
     }
 
-    // Google's own snippet always wins — it's already the classic thing.
     const native = OG.googleSnippet();
     if (native) {
       native.node.setAttribute('data-og-hidden', 'native-fs');
@@ -381,19 +307,10 @@
       return;
     }
 
-    // Wait until results actually exist before spending a fetch.
     if (!OG.organicResults().length) return;
 
     state.status = 'pending';
 
-    /* The real answer needs a page fetch and a pass of the model, so it cannot
-     * be there instantly. Google's index description can, and showing it kept
-     * the box from sitting empty — but when the real answer arrives quickly the
-     * reader just sees the text change under them for no reason.
-     *
-     * So hold the stopgap back. If the real answer beats the delay, it is the
-     * only thing ever shown and nothing swaps. The stopgap appears only when
-     * waiting would otherwise mean staring at a blank space. */
     const stopgap = provisional();
     const stopgapTimer = setTimeout(() => {
       if (!stopgap || state.key !== key || state.status !== 'pending') return;
@@ -411,7 +328,6 @@
         if (state.key !== key) return;
         state.status = 'done';
         if (data) return show(data);
-        // Nothing better was found. Show the stopgap now if it never appeared.
         if (stopgap && state.data !== stopgap) show(stopgap);
         OG.log('no passage extracted; showing the index description');
       });

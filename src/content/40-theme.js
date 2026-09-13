@@ -1,17 +1,7 @@
-/* Old Google (2020) — DOM-side theming.
- *
- * Google's CSS class names are obfuscated and churn constantly, so instead of
- * betting the stylesheet on them we walk the results once and stamp our own
- * stable hooks (og-result / og-title / og-cite / og-snippet). The stylesheet
- * targets those. We also rebuild the two things 2026 Google deleted outright:
- * the numbered "Gooooooogle" pager and the classic tab strip.
- */
 (() => {
   const OG = window.OG;
 
   const O_COLORS = ['#EA4335', '#FBBC05', '#4285F4', '#34A853'];
-
-  /* --------------------------- theme sensing -------------------------- */
 
   function relativeLuminance(css) {
     const m = /rgba?\(([^)]+)\)/.exec(css);
@@ -26,14 +16,6 @@
     return 0.2126 * channel(parts[0]) + 0.7152 * channel(parts[1]) + 0.0722 * channel(parts[2]);
   }
 
-  /**
-   * Is Google in dark mode?
-   *
-   * Measured from the search field's own text colour. The header is the one
-   * thing the extension never restyles, so its colours are Google's and can be
-   * trusted; light text there means a dark theme. Until the DOM exists,
-   * 00-state.js guesses from the OS preference and this corrects it.
-   */
   OG.detectTheme = function () {
     const root = document.documentElement;
     if (!OG.settings.theme || !OG.settings.followDark) {
@@ -47,20 +29,6 @@
     root.classList.toggle('og-dark', lum > 0.5); // light text on a dark ground
   };
 
-  /* ------------------------- stable hooks ---------------------------- */
-
-  /**
-   * Align the results column with Google's own tab strip.
-   *
-   * The gutter used to be padding on #cnt/#rcnt, but the tab strip lives inside
-   * those, so it was shifted along with the results — the rule under the tabs
-   * started 180px in instead of at the window edge, and switching to a tab that
-   * did not get the gutter made the whole header jump sideways.
-   *
-   * So measure where Google actually puts the tabs and offset only the columns
-   * to match. That keeps the two aligned on every tab and at every width, and
-   * leaves the header untouched, which is the rule everywhere else here.
-   */
   OG.markColumns = function () {
     const root = document.documentElement;
     for (const stale of OG.qsa('.og-offset, .og-foot-bleed')) {
@@ -68,22 +36,15 @@
       stale.classList.remove('og-foot-bleed');
     }
 
-    // The tab links: the only /search links sitting near the top of the page.
-    // Taking the nav's first <a> instead measured a hidden one, whose rect is
-    // 0x0 at the origin — so the gutter came out as 0 and every result sat
-    // flush against the left edge.
     const edges = [];
     for (const link of OG.qsa('a[href*="/search"]')) {
       if (link.hasAttribute('data-og-hidden') || !link.checkVisibility()) continue;
       const rect = link.getBoundingClientRect();
       if (rect.width < 8 || rect.height < 8) continue; // hidden or collapsed
       if (rect.top > 300) continue; // below the tab strip: a result link
-      // The link's own padding sits inside its box; the text edge is what the
-      // eye actually lines up against.
       edges.push(Math.round(rect.left + parseFloat(getComputedStyle(link).paddingLeft)));
     }
 
-    // One stray link is not a tab strip. Require a few before trusting it.
     let gutter = 180; // the 2020 value, and the fallback
     if (edges.length >= 2) {
       const left = Math.min(...edges);
@@ -92,11 +53,6 @@
     root.style.setProperty('--og-gutter', gutter + 'px');
   };
 
-  /**
-   * Google ships an #rhs container on every SERP, empty when there is no
-   * knowledge panel. Giving every child the panel's border drew a stray hairline
-   * across the page, so only children with actual content get styled.
-   */
   OG.markKnowledgePanel = function () {
     const rhs = document.getElementById('rhs');
     if (!rhs) return;
@@ -116,12 +72,6 @@
     rhs.classList.toggle('og-kp-empty', !content);
   };
 
-  /**
-   * 2020 showed a bare favicon. Google now seats it in a bordered rounded
-   * plate. Mark the icon, plus the wrappers around it that hold nothing but the
-   * icon, so the plate can be flattened without touching anything with text in
-   * it.
-   */
   function stripFaviconChrome(block) {
     const cite = block.querySelector('cite');
     if (!cite) return;
@@ -143,12 +93,6 @@
     }
   }
 
-  /**
-   * 2020 showed one line above the title: favicon + full breadcrumb. Today
-   * Google stacks a site name above the URL and adds an "About this result"
-   * menu. Collapse it back, structurally rather than by class name: the site
-   * name is the short, URL-less element immediately before the cite.
-   */
   function collapseSiteHeader(block) {
     const cite = block.querySelector('cite');
     if (!cite) return;
@@ -184,12 +128,7 @@
       const btn = menu.closest('[role="button"], [jsaction]') || menu;
       if (btn.textContent.trim().length < 3) btn.setAttribute('data-og-hidden', 'about');
     }
-
-    // The header — search box, tab strip, the rule under it — is deliberately
-    // left alone. See the note in theme-2020.css.
   };
-
-  /* --------------------------- pagination ---------------------------- */
 
   function pageUrl(start) {
     const url = new URL(location.href);
@@ -217,7 +156,6 @@
     }
     table.appendChild(prev);
 
-    // The logo: G + one 'o' per page + gle, each 'o' a page link.
     const logo = OG.el('div', { class: 'og-pager-logo' });
     logo.appendChild(OG.el('span', { class: 'og-pager-letter og-blue', text: 'G' }));
     for (let i = 0; i < count; i++) {
@@ -256,14 +194,12 @@
 
     const anchor = document.getElementById('botstuff') || document.getElementById('rso');
     if (!anchor) return;
-    // Only page once results are on screen.
     if (!document.querySelector('#rso h3')) return;
 
     const wrap = OG.el('div', { id: 'og-pager-wrap' }, [buildPager()]);
     if (anchor.id === 'botstuff') anchor.appendChild(wrap);
     else anchor.parentNode.insertBefore(wrap, anchor.nextSibling);
 
-    // Google's own "More results" button / infinite scroll sentinel.
     for (const node of OG.qsa('#botstuff [role="button"], .GNJvt, .T7sFge, #pnnext')) {
       const label = node.textContent.trim().toLowerCase();
       if (label === 'more results' || label === 'show more results') {
@@ -278,7 +214,6 @@
     OG.markColumns();
     OG.markKnowledgePanel();
     OG.markResults();
-    // 2020 said "About 12,300,000 results (0.51 seconds)" right under the tabs.
     document.getElementById('result-stats')?.classList.add('og-stats');
   };
 })();

@@ -1,21 +1,3 @@
-/* Old Google (2020) — the dictionary / thesaurus card.
- *
- * "gazelle definition", "define gazelle", "marvelous synonym" used to open a
- * built-in card: the word, its pronunciation with a speaker button, numbered
- * senses with examples, and rows of "Similar" / "Opposite" chips. Today those
- * queries return an ordinary snippet quoting a dictionary site. This puts the
- * card back and hides Google's own box if one shows up.
- *
- * Google's box quoted Oxford Languages; with Oxford API credentials in the
- * popup this does too. Otherwise definitions and examples come from
- * Wiktionary's REST API and synonyms, antonyms and the pronunciation from
- * Datamuse, both free and keyless. Only the
- * single word is ever sent, and only for queries that clearly ask for a
- * definition — see OG.dictionaryTarget. Wiktionary's HTML is reduced to text
- * before anything touches the page.
- *
- * The look is Google's last pre-AI-Overviews design (late 2023); see dictionary.css.
- */
 (() => {
   const OG = window.OG;
 
@@ -37,10 +19,6 @@
     if (!cond) throw new Error('dictionary: ' + msg);
   }
 
-  /**
-   * @returns {null | {word: string, mode: 'define'|'synonym', opposite: boolean}}
-   * opposite is set for antonym queries, which lead with the opposite words.
-   */
   OG.dictionaryTarget = function (raw) {
     const q = raw.trim().toLowerCase().replace(/[?!.]+$/, '');
 
@@ -64,18 +42,12 @@
     return null;
   };
 
-  /* ------------------------------ sources --------------------------- */
-
   const fetchJson = (url, headers) => OG.ask({ type: 'og:fetchJson', url, headers }, 12000);
 
-  /** Wiktionary and Oxford hand back HTML; only its text is ever used. */
   function text(html) {
     return new DOMParser().parseFromString(html, 'text/html').body.textContent.replace(/\s+/g, ' ').trim();
   }
 
-  // Every provider resolves to the same shapes, kept per word for the page lifetime:
-  //   entry:    {word, phonetic, audio, blocks: [{pos, senses: [{text, example}]}], credit}
-  //   similar:  string[]      opposite: string[]
   const cache = new Map();
   function sources(word) {
     if (cache.has(word)) return cache.get(word);
@@ -89,9 +61,6 @@
     const defs = fetchJson(WIKTIONARY + encodeURIComponent(word.replace(/ /g, '_')), {});
     const meta = fetchJson(DATAMUSE + 'sp=' + w + '&md=dpr&max=1', {});
     const words = (res) => (res.ok ? res.data.map((x) => x.word) : []);
-    // Datamuse's strict synonym list is thin for many words (three for
-    // "inspired"), so it is topped up with "means like" words that share the
-    // word's own part of speech, the way a thesaurus would.
     const similar = Promise.all([
       fetchJson(DATAMUSE + 'rel_syn=' + w + '&max=30', {}),
       fetchJson(DATAMUSE + 'ml=' + w + '&md=p&max=60', {}),
@@ -112,9 +81,6 @@
     };
   }
 
-  /* Oxford Languages is what Google's own box quoted ("Definitions from Oxford
-   * Languages"). Its API is keyed and paid, so it is used only when the popup
-   * has credentials. The thesaurus endpoint carries synonyms and antonyms. */
   function oxford(word) {
     const base = OXFORD[OG.settings.oxfordSandbox ? 'sandbox' : 'production'];
     const headers = { app_id: OG.settings.oxfordAppId, app_key: OG.settings.oxfordAppKey };
@@ -130,7 +96,6 @@
     return { entry: entries.then((res) => shapeOxford(word, res)), similar: thesaurus.then(words('synonyms')), opposite: thesaurus.then(words('antonyms')) };
   }
 
-  // results[].lexicalEntries[].entries[].senses[] — flattened, with the part of speech stapled on.
   function oxfordSenses(data) {
     assert(Array.isArray(data.results) && data.results.length, 'Oxford: no results');
     return data.results.flatMap((r) => r.lexicalEntries.flatMap((le) => le.entries.flatMap((e) =>
@@ -157,7 +122,6 @@
     };
   }
 
-  // -> [{pos, senses: [{text, example}]}]
   function blocksFromWiktionary(data) {
     assert(Array.isArray(data.en), 'no English entry');
     const blocks = data.en.map((e) => ({
@@ -169,7 +133,6 @@
     return blocks.filter((b) => b.senses.length);
   }
 
-  // Datamuse's fallback definitions look like "adj\tExciting wonder or surprise."
   const POS = { n: 'noun', v: 'verb', adj: 'adjective', adv: 'adverb', u: '' };
   function blocksFromDatamuse(hit) {
     const blocks = [];
@@ -189,8 +152,6 @@
   };
   const STRESS = { 0: '', 1: 'ˈ', 2: 'ˌ' };
 
-  /** "HH AE1 P IY0" -> "/ˈhæpi/". A stress mark goes before the consonants leading
-   *  into the vowel; of two or more, the first stays with the syllable before. */
   function respell(arpabet) {
     let out = '';
     let consonants = [];
@@ -223,8 +184,6 @@
     };
   }
 
-  /* ---------------------------- rendering --------------------------- */
-
   function icon(svg) {
     const span = OG.el('span');
     span.innerHTML = svg; // our own constant markup, never API data
@@ -239,8 +198,6 @@
     return OG.el('a', { class: 'og-dict-chip', href: defineUrl(word), text: word });
   }
 
-  // The chips arrive after the card is up, so a row starts out as just its
-  // label; the CSS reserves the collapsed height so nothing jumps.
   const LABEL = { similar: 'Similar', opposite: 'Opposite' };
   function chipRow(kind, mode) {
     const label = OG.el('span', { class: 'og-dict-label', text: LABEL[kind] + (mode === 'define' ? ':' : '') });
@@ -261,14 +218,10 @@
     showMore(panel);
   }
 
-  /** The "More ..." pill only appears when something is actually folded away. */
   function showMore(panel) {
     panel.querySelector('.og-dict-more').hidden = !panel.querySelector('.og-dict-extra, .og-dict-caret');
   }
 
-  /* Collapsed, a chip list shows one row (thesaurus: two); max-height hides the
-     rest. A caret pill takes the place of the last chip that fits, and clicking
-     it opens the list. Measures offsetTop, so the card must be in the page. */
   function clamp(chips) {
     if (!chips.isConnected || chips.querySelector('.og-dict-caret')) return;
     const limit = chips.clientHeight;
@@ -290,7 +243,6 @@
     }
   }
 
-  // Google numbered senses only when there were several.
   function senses(block) {
     const list = OG.el('ol', { class: block.senses.length === 1 ? 'og-dict-senses og-dict-single' : 'og-dict-senses' });
     block.senses.forEach((s, i) => {
@@ -301,7 +253,6 @@
     return list;
   }
 
-  // "Definitions from Oxford Languages · Learn more", under the heading.
   function credit(entry) {
     return OG.el('div', { class: 'og-dict-credit' }, [
       OG.el('span', { text: entry.credit }),
@@ -310,7 +261,6 @@
     ]);
   }
 
-  // A rule with the pill sitting on it, then Feedback.
   function foot(panel, more) {
     const label = OG.el('span', { text: more });
     const pill = OG.el('a', { class: 'og-dict-more', href: '#', onclick: (e) => {
@@ -381,7 +331,6 @@
     showMore(panel);
   }
 
-  /** Google's own dictionary box is replaced by ours, so it is hidden while ours is on its way or showing. */
   function hideGoogleBox(hide) {
     for (const node of OG.qsa('[data-attrid="DictionaryHeader"], #dictionary-modules')) {
       const block = node.closest('#rso > *') || node;
@@ -390,10 +339,6 @@
     }
   }
 
-  /* ------------------------------ driver ---------------------------- */
-
-  // status: idle (no dictionary query) | pending | done | failed. The snippet
-  // module reads it: a card in flight or showing takes the snippet's place.
   const state = (OG.dictionary = { key: null, status: 'idle', panel: null });
 
   OG.ensureDictionary = function () {
@@ -410,7 +355,6 @@
     if (!target) return;
 
     if (state.status === 'done') {
-      // Google re-rendered the results column out from under us.
       if (!state.panel.isConnected) mount(state.panel);
       return;
     }
@@ -424,7 +368,6 @@
         state.status = 'done';
         state.panel = render(target, entry);
         mount(state.panel);
-        // 2020 showed the card instead of a snippet for these queries.
         document.getElementById('og-featured')?.remove();
         for (const kind of ['similar', 'opposite']) {
           s[kind].then((words) => fill(state.panel.querySelector('.og-dict-' + kind), words));

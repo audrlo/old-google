@@ -1,12 +1,3 @@
-/**
- * Old Google (2020) — background service worker.
- *
- * Single job: fetch one third-party page on behalf of the content script so a
- * classic featured snippet can be quoted from it. Content scripts can't do this
- * cross-origin, and the page HTML is never executed — the content script parses
- * it with an inert DOMParser and only ever inserts textContent.
- */
-
 const MAX_BYTES = 2 * 1024 * 1024; // 2 MB is plenty for an article's <head>+<body>
 const TIMEOUT_MS = 9000;
 const TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
@@ -40,7 +31,6 @@ async function politeDelay(host) {
   lastHit.set(host, Date.now());
 }
 
-/** GET with a deadline, no credentials and no referrer. */
 function get(url, headers) {
   const ctrl = new AbortController();
   setTimeout(() => ctrl.abort(), TIMEOUT_MS);
@@ -49,7 +39,6 @@ function get(url, headers) {
 
 const failure = (err) => ({ ok: false, error: err.name === 'AbortError' ? 'timeout' : 'network' });
 
-/** Read at most MAX_BYTES of the body, decoding as UTF-8. */
 async function readCapped(response) {
   const reader = response.body.getReader();
   const decoder = new TextDecoder('utf-8', { fatal: false });
@@ -68,7 +57,6 @@ async function readCapped(response) {
   return out + decoder.decode();
 }
 
-/** @returns {{ok: true, html, finalUrl} | {ok: false, error}} */
 async function fetchPage(rawUrl) {
   const url = new URL(rawUrl);
   const cached = await readCache(url.href);
@@ -82,7 +70,6 @@ async function fetchPage(rawUrl) {
       if (!res.ok) return { ok: false, error: 'http-' + res.status };
       const type = (res.headers.get('content-type') ?? '').toLowerCase();
       if (type && !type.includes('html') && !type.includes('xml')) return { ok: false, error: 'not-html' };
-      // Honour a site's wish not to be excerpted.
       const robots = (res.headers.get('x-robots-tag') ?? '').toLowerCase();
       if (robots.includes('nosnippet') || robots.includes('noarchive')) return { ok: false, error: 'nosnippet' };
       const payload = { ok: true, html: await readCapped(res), finalUrl: res.url };
@@ -99,9 +86,6 @@ async function fetchPage(rawUrl) {
   return job;
 }
 
-/** JSON sibling of fetchPage, for the dictionary lookup. No politeDelay: these
- *  are APIs built for concurrent calls, and the card asks Datamuse three things at once.
- *  @returns {{ok: true, data} | {ok: false, error}} */
 async function fetchJson(url, headers) {
   const cached = await readCache(url);
   if (cached) return cached;
@@ -117,11 +101,8 @@ async function fetchJson(url, headers) {
   }
 }
 
-/* ---------------------- offscreen inference host ---------------------- */
-
 let offscreenReady = null;
 
-/** Create the offscreen document once; concurrent callers share the attempt. */
 function ensureOffscreen() {
   offscreenReady ??= (async () => {
     const contexts = await chrome.runtime.getContexts({ contextTypes: ['OFFSCREEN_DOCUMENT'] });
@@ -131,7 +112,6 @@ function ensureOffscreen() {
       reasons: ['WORKERS'],
       justification: 'Runs the local question-answering model that ranks candidate snippet passages.',
     }).catch((err) => {
-      // Another worker invocation may have created it between the check and here.
       if (!/already/i.test(String(err))) throw err;
     });
   })().catch((err) => {
@@ -147,15 +127,6 @@ async function scorePassages(query, passages) {
   return res ?? { ok: false, error: 'no-response' };
 }
 
-/* ------------------------------------------------------------------------
- * Highlighting the quoted passage on the source page.
- *
- * A snippet link's href carries a text fragment, so the browser itself scrolls
- * to the passage and marks it. The mark is the browser's default colour; 2020
- * Google's was a pale purple, so once the page has loaded ::target-text is
- * restyled there. The click is remembered for half a minute and matched by
- * origin + path, so it works whether the link opened in this tab or a new one.
- * ---------------------------------------------------------------------- */
 const HIGHLIGHT_TTL_MS = 30 * 1000;
 const HIGHLIGHT_CSS = '::target-text { background-color: #e5d4f6 !important; color: #202124 !important; }';
 const pendingHighlights = new Map(); // origin + pathname -> expiry
@@ -173,8 +144,6 @@ chrome.tabs.onUpdated.addListener((tabId, info, tab) => {
   if (until > Date.now()) chrome.scripting.insertCSS({ target: { tabId }, css: HIGHLIGHT_CSS });
 });
 
-/* The emoji table (Unicode's list with CLDR names and keywords, built by
- * tools/build-emoji.py) is read once here and handed to any tab that asks. */
 let emojiTable = null;
 async function emoji() {
   emojiTable ??= await (await fetch(chrome.runtime.getURL('data/emoji.json'))).json();
@@ -182,7 +151,6 @@ async function emoji() {
 }
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
-  // Messages addressed to the offscreen document are not ours to handle.
   if (msg.target === 'og-offscreen') return false;
   const reply = (promise) => {
     promise.then(sendResponse, (err) => sendResponse({ ok: false, error: String(err.message ?? err) }));

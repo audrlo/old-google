@@ -1,4 +1,3 @@
-/* Old Google (2020) — shared state, settings and helpers. Runs at document_start. */
 (() => {
   const OG = (window.OG = window.OG || {});
 
@@ -32,7 +31,6 @@
     if (OG.settings.debug) console.log('%c[old-google]', 'color:#1a73e8;font-weight:bold', ...args);
   };
 
-  /** Ask the service worker. Every answer is {ok, ...}; silence past the deadline is one too. */
   OG.ask = function (message, timeoutMs) {
     return new Promise((resolve) => {
       setTimeout(() => resolve({ ok: false, error: 'timeout' }), timeoutMs);
@@ -41,8 +39,6 @@
       });
     });
   };
-
-  /* ---------- page helpers ---------- */
 
   OG.isSearchPage = function () {
     const p = location.pathname;
@@ -53,11 +49,6 @@
   OG.isResultsPage = function () {
     return location.pathname === '/search' && new URLSearchParams(location.search).has('q');
   };
-  /**
-   * True only on the text-results tab. Images / Videos / Shopping / News have a
-   * completely different layout — no 652px column, no right rail — so the 2020
-   * column geometry must not be forced on them or the page overflows sideways.
-   */
   OG.isWebTab = function () {
     const p = new URLSearchParams(location.search);
     if (p.get('tbm')) return false;          // legacy vertical param
@@ -73,9 +64,6 @@
     return parseInt(new URLSearchParams(location.search).get('start'), 10) || 0;
   };
 
-  /* ---------- dom helpers ---------- */
-
-  /** Build an element. `class`, `text` and `on*` props are special; a null prop is skipped. */
   OG.el = function (tag, props, children) {
     const node = document.createElement(tag);
     for (const [k, v] of Object.entries(props ?? {})) {
@@ -91,7 +79,6 @@
 
   OG.qsa = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
-  /** The results column, where a card goes. Null before Google has drawn it. */
   OG.column = () => document.getElementById('rso') || document.getElementById('center_col');
 
   OG.throttle = function (fn, ms) {
@@ -113,7 +100,6 @@
     };
   };
 
-  /** Toggle the html classes the stylesheets key off. Called before first paint. */
   OG.applyClasses = function () {
     const s = OG.settings;
     const root = document.documentElement;
@@ -121,8 +107,6 @@
     root.classList.toggle('og-2020', on && s.theme);
     root.classList.toggle('og-hide-ai', on && s.hideAI);
     root.classList.toggle('og-hide-ads', on && s.hideAds);
-    // Before the DOM exists we can only guess from the OS preference;
-    // OG.detectTheme() corrects this by measuring Google's own header.
     const prefersDark = matchMedia('(prefers-color-scheme: dark)').matches;
     root.classList.toggle('og-dark', on && s.theme && s.followDark && prefersDark);
     root.classList.toggle('og-green-urls', on && s.theme && s.greenUrls);
@@ -130,7 +114,6 @@
     root.classList.toggle('og-web', on && s.theme && OG.isWebTab());
   };
 
-  /** User-supplied selectors + custom CSS live in one <style> we own. */
   OG.applyUserCss = function () {
     const s = OG.settings;
     const extra = s.extraHideSelectors.split(/[\n,]+/).map((x) => x.trim()).filter(Boolean);
@@ -150,7 +133,5 @@
     tag.textContent = css;
   };
 
-  // Optimistic: defaults are "on", so apply immediately at document_start to
-  // avoid a flash of 2026 Google, then correct once storage answers.
   OG.applyClasses();
 })();

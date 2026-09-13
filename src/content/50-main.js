@@ -1,4 +1,3 @@
-/* Old Google (2020) — orchestrator. */
 (() => {
   const OG = window.OG;
 
@@ -17,7 +16,6 @@
     } catch (err) {
       OG.log('pass failed', err);
     } finally {
-      // Let our own mutations settle before the observer can re-trigger.
       setTimeout(() => {
         running = false;
       }, 0);
@@ -51,7 +49,6 @@
     window.addEventListener('load', schedule);
 
     new MutationObserver((records) => {
-      // Ignore mutations we caused ourselves.
       if (records.some((r) => !r.target.closest('[data-og]'))) schedule();
     }).observe(document.documentElement, { childList: true, subtree: true });
 

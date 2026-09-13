@@ -1,13 +1,3 @@
-/* Old Google (2020) — offscreen inference host.
- *
- * Holds the DistilBERT-SQuAD session and answers scoring requests from the
- * service worker. For each (query, passage) pair it returns how strongly the
- * model believes an answer to the query is present in that passage.
- *
- * On WebGPU the fp16 model scores a passage in a few milliseconds; the int8
- * model on WASM is the fallback for machines without a GPU adapter. Nothing
- * leaves the machine. Both model files are bundled in the extension.
- */
 (() => {
   'use strict';
 
@@ -40,7 +30,6 @@
     return (await navigator.gpu.requestAdapter()) ? 'webgpu' : 'wasm';
   }
 
-  /** Load the runtime and model once; returns which backend is in use. */
   function init() {
     ready ??= (async () => {
       const kind = await backend();
@@ -58,16 +47,6 @@
     return ready;
   }
 
-  /**
-   * The best start+end logit pair over the passage's tokens. This is a
-   * SQuAD 1.1 model: its [CLS] "no answer" logit was never trained, and
-   * subtracting it only added noise (13/15 on the ranking set against 15/15
-   * without), so the raw span logit is the score.
-   *
-   * Passages are scored ONE AT A TIME. Batching pads every passage to the
-   * longest in the batch, and on the int8 model that measurably moved the
-   * scores. A passage's score must not depend on what is scored beside it.
-   */
   async function scoreOne(query, passage) {
     const encoding = tokenizer.encodePair(query, passage, MAX_LEN);
     const ctxStart = encoding.typeIds.indexOf(1);

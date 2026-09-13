@@ -1,25 +1,13 @@
-/* Old Google (2020) — the emoji box.
- *
- * "fire emoji", "shrug emoji copy", "❤️ emoji": the emoji, large, with a Copy
- * button. Google added this box in June 2025 but it only fires for some
- * phrasings and some emoji; this one answers every emoji and every phrasing,
- * and Google's own box is hidden so there is one. The table is Unicode's emoji list
- * with CLDR's English names and keywords (data/emoji.json), served by the
- * service worker; nothing leaves the machine.
- */
 (() => {
   const OG = window.OG;
 
   const MAX_MATCHES = 8;
   const GROUPS = ['Smileys & Emotion', 'People & Body', 'Animals & Nature', 'Food & Drink', 'Travel & Places', 'Activities', 'Objects', 'Symbols', 'Flags', 'Component'];
-  // A pictograph with its variation selector, skin tone and ZWJ tail; a flag
-  // (two regional indicators); or a keycap.
   const EMOJI_CHAR = /[\u{1F1E6}-\u{1F1FF}]{2}|[#*0-9]️?⃣|\p{Extended_Pictographic}(?:️|‍\p{Extended_Pictographic}|[\u{1F3FB}-\u{1F3FF}])*/u;
   const SKIN_TONE = /[\u{1F3FB}-\u{1F3FF}]/gu;
 
   const QUESTION = /^(?:what|what's|how|why|when|where|which|who|is|are|do|does|can|meaning|define)\b/;
 
-  /** @returns {null | {kind: 'char', char: string} | {kind: 'name', term: string}} */
   OG.emojiTarget = function (raw) {
     const q = raw.trim().toLowerCase();
     const char = q.match(EMOJI_CHAR);
@@ -31,28 +19,16 @@
     return { kind: 'name', term };
   };
 
-  // Among equals a smiley beats an object ("hundred points" over "euro
-  // banknote" for "100"), then the plain form wins: "red heart" over "sparkling heart",
-  // "person shrugging" over "man shrugging", "smiling face with heart-eyes" over
-  // "smiling cat with heart-eyes".
   const plainness = (e) => e.n.length + (/^(?:man|woman|men|women) |\bcat\b/i.test(e.n) ? 20 : 0);
 
-  // "laugh" matches "laughing"; short words must match exactly.
   const sameWord = (a, b) => a === b || (a.length >= 4 && b.length >= 4 && (a.startsWith(b) || b.startsWith(a)));
 
-  // CLDR hyphenates ("stuck-out", "jack-o-lantern", "money-mouth") where people
-  // type spaces, and says "stuck" where people say "sticking": "tongue sticking
-  // out" has to reach the keyword "stuck-out".
   const SAID_AS = { sticking: 'stuck', stick: 'stuck', sticks: 'stuck' };
   const wordsOf = (s) => s.split(/[\s-]+/).filter(Boolean).map((w) => SAID_AS[w] || w);
 
-  /** Best matches first: the exact name, a name ending in the term ("red heart"
-   *  for "heart"), a keyword, then every query word found somewhere. */
   OG.emojiMatches = function (target, table) {
     switch (target.kind) {
       case 'char': {
-        // The table folds skin tones into the base emoji; a toned one you
-        // pasted is offered back exactly as typed, with the base beside it.
         const plain = (c) => c.replace(/️/g, '').replace(SKIN_TONE, '');
         const base = table.filter((e) => plain(e.c) === plain(target.char));
         if (!base.length || plain(target.char) === target.char.replace(/️/g, '')) return base;
@@ -82,12 +58,6 @@
         throw new Error('emoji: unknown target ' + target.kind);
     }
   };
-
-  /* ------------------------------ rendering -------------------------
-   * Google's box (June 2025): a bordered card holding a row of emoji, each
-   * over an outlined "Copy" pill with the copy icon; the pill turns into a
-   * filled "Copied" with a check for a few seconds. No names, no attribution,
-   * just a Feedback link under the card. */
 
   const COPY_ICON = '<svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>';
   const CHECK_ICON = '<svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>';
@@ -134,11 +104,7 @@
     column.insertBefore(box, column.firstChild);
   }
 
-  /* ------------------------------ driver ---------------------------- */
-
   let table = null; // Promise of the table, fetched once per page
-  // key is set while the query is an emoji query; 30-snippet.js holds the
-  // featured snippet back while it is.
   const state = (OG.emoji = { key: null, box: null });
 
   OG.ensureEmoji = function () {
