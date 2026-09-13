@@ -33,11 +33,18 @@
 
   // Among equals a smiley beats an object ("hundred points" over "euro
   // banknote" for "100"), then the plain form wins: "red heart" over "sparkling heart",
-  // "person shrugging" over "man shrugging".
-  const plainness = (e) => e.n.length + (/^(?:man|woman|men|women) /i.test(e.n) ? 20 : 0);
+  // "person shrugging" over "man shrugging", "smiling face with heart-eyes" over
+  // "smiling cat with heart-eyes".
+  const plainness = (e) => e.n.length + (/^(?:man|woman|men|women) |\bcat\b/i.test(e.n) ? 20 : 0);
 
   // "laugh" matches "laughing"; short words must match exactly.
   const sameWord = (a, b) => a === b || (a.length >= 4 && b.length >= 4 && (a.startsWith(b) || b.startsWith(a)));
+
+  // CLDR hyphenates ("stuck-out", "jack-o-lantern", "money-mouth") where people
+  // type spaces, and says "stuck" where people say "sticking": "tongue sticking
+  // out" has to reach the keyword "stuck-out".
+  const SAID_AS = { sticking: 'stuck', stick: 'stuck', sticks: 'stuck' };
+  const wordsOf = (s) => s.split(/[\s-]+/).filter(Boolean).map((w) => SAID_AS[w] || w);
 
   /** Best matches first: the exact name, a name ending in the term ("red heart"
    *  for "heart"), a keyword, then every query word found somewhere. */
@@ -53,15 +60,15 @@
       }
       case 'name': {
         const term = target.term;
-        const words = term.split(/\s+/);
+        const words = wordsOf(term);
         const rank = (e) => {
           const name = e.n.toLowerCase().replace(/[:,]/g, '');
-          const nameWords = name.split(' ');
+          const nameWords = wordsOf(name);
           if (name === term) return 0;
           if (name.endsWith(' ' + term)) return 1;
           if (e.k.includes(term)) return 2;
           if (words.every((w) => nameWords.some((n) => sameWord(n, w)))) return 3;
-          if (words.every((w) => nameWords.some((n) => sameWord(n, w)) || e.k.some((k) => k.split(' ').some((n) => sameWord(n, w))))) return 4;
+          if (words.every((w) => nameWords.some((n) => sameWord(n, w)) || e.k.some((k) => wordsOf(k).some((n) => sameWord(n, w))))) return 4;
           return 9;
         };
         return table

@@ -38,6 +38,8 @@ for (const [q, want] of [
   ['american flag emoji', '🇺🇸'], ['us flag emoji', '🇺🇸'], ['usa flag emoji', '🇺🇸'], ['uk flag emoji', '🇬🇧'],
   ['japan flag emoji', '🇯🇵'], ['japanese flag emoji', '🇯🇵'], ['mexican flag emoji', '🇲🇽'], ['🇺🇸 emoji', '🇺🇸'],
   ['👍🏿', '👍🏿'], ['👍🏿 emoji copy', '👍🏿'], ['1️⃣ emoji', '1️⃣'], ['eggplant emoji', '🍆'], ['melting face emoji', '🫠'],
+  ['tongue sticking out emoji', '😛'], ['tongue out emoji', '😛'], ['stick out tongue emoji', '😛'], ['stuck out tongue emoji', '😛'],
+  ['jack o lantern emoji', '🎃'], ['money mouth emoji', '🤑'], ['heart eyes emoji', '😍'],
 ]) check(q + ' -> ' + want, first(q) === want, first(q));
 
 console.log('\nwhich queries do not');
