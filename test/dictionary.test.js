@@ -187,6 +187,10 @@ async function open(browser, qs, dark) {
         example: d.querySelector('.og-dict-example').textContent,
         exampleColor: px('.og-dict-example', 'color'),
         similarLabel: px('.og-dict-similar .og-dict-label', 'color'),
+        labelOffset: (() => {
+          const mid = (el) => { const rg = document.createRange(); rg.selectNodeContents(el); const b = rg.getBoundingClientRect(); return b.top + b.height / 2; };
+          return Math.abs(mid(similar.querySelector('.og-dict-label')) - mid(similar.querySelector('.og-dict-chip'))).toFixed(1);
+        })(),
         oppositeLabel: px('.og-dict-opposite .og-dict-label', 'color'),
         oppositeChips: d.querySelectorAll('.og-dict-opposite .og-dict-chip').length,
         chipCount: chips.length,
@@ -208,6 +212,7 @@ async function open(browser, qs, dark) {
     });
     check('a borderless block, not a card', r.border === '0px' && r.radius === '0px' && r.bg === 'rgba(0, 0, 0, 0)' && r.shadow === 'none', r);
     check('block is 652px like the column', r.width === 652, r.width);
+    check('"Similar" label text centred on the chip text', r.labelOffset <= 1, r.labelOffset);
     check('block sits above everything else', r.firstInRso === 'og-dictionary', r.firstInRso);
     check('featured snippet suppressed for a definition query', r.snippetSuppressed);
     check("Google's own dictionary box is hidden", r.googleBoxHidden);

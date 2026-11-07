@@ -163,7 +163,7 @@
 .og-dict-label {
   display: inline-block;
   vertical-align: top;
-  margin: 9px 8px 0 0;
+  margin: 6px 8px 0 0; /* same top as .og-dict-chip, so the text centres line up */
   height: 24px;
   line-height: 24px;
   color: var(--og-similar);
