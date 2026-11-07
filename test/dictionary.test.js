@@ -288,6 +288,7 @@ async function open(browser, qs, dark) {
     check('word at 28px/36px', r.word === 'marvelous 28px/36px', r.word);
     check('italic #5e5e5e part of speech', r.pos === 'italic rgb(94, 94, 94)', r.pos);
     check('one short definition, no example', /Exciting wonder or surprise/.test(r.def) && r.noExample, r.def);
+    check('Wiktionary TemplateStyles CSS is not printed as text', !/mw-parser-output|font-size/.test(r.def), r.def);
     check('label "Similar" without a colon, green', r.label === 'Similar rgb(24, 128, 56)', r.label);
     check('bigger chips: 26px tall, 14px, pill', r.chipStyle === '26px 14px 32px', r.chipStyle);
     check('"More" pill only when something is folded away', r.moreShownOnlyWhenFolded, r);

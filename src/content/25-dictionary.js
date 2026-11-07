@@ -44,7 +44,11 @@
   const fetchJson = (url, headers) => OG.ask({ type: 'og:fetchJson', url, headers }, 12000);
 
   function text(html) {
-    return new DOMParser().parseFromString(html, 'text/html').body.textContent.replace(/\s+/g, ' ').trim();
+    // Wiktionary inlines TemplateStyles (<style>.mw-parser-output .defdate{…}</style>)
+    // in definitions; textContent would print the CSS as words.
+    const body = new DOMParser().parseFromString(html, 'text/html').body;
+    body.querySelectorAll('style, script, link, template').forEach((el) => el.remove());
+    return body.textContent.replace(/\s+/g, ' ').trim();
   }
 
   const cache = new Map();
